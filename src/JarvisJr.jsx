@@ -9,9 +9,6 @@ import PageCRM from "./PageCRM";
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const WEBHOOK_URL = "https://jarvis-n8n.qssazf.easypanel.host/webhook-test/jarvis_jr";
-const SHEET_ID    = "1wP2svngeeWtthMMoCJcE5Vv2i1lMGTp_5ONeWbVT-qA";
-const SHEET_GID   = "1568819980";
-const SHEET_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 
 const COMERCIANTES = ["Amanda", "Caique", "Laísa", "Pedro", "Gustavo", "Enzo"];
 
@@ -1788,6 +1785,7 @@ export default function App() {
   const [allLeads, setAllLeads]     = useState([]);
   const [loading, setLoading]       = useState(true);
   const [lastSync, setLastSync]     = useState(null);
+  const [syncError, setSyncError] = useState(null);
   const [active, setActive]         = useState("dashboard");
   const [comerciante, setComercian] = useState("Amanda");
 
@@ -1795,10 +1793,16 @@ export default function App() {
     setLoading(true);
     try {
       const res = await fetch(
-        `https://corsproxy.io/?${encodeURIComponent(SHEET_URL)}`,
+        "/api/leads",
         { cache:"no-store" }
       );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || `Erro ao carregar planilha (HTTP ${res.status}).`);
+      }
+      if (!(res.headers.get("content-type") || "").includes("text/csv")) {
+        throw new Error("A rota /api/leads não retornou CSV. Verifique o deploy na Vercel.");
+      }
       const text = await res.text();
       const rows = parseCSV(text);
       setAllLeads(rows.map(r => ({
@@ -1806,9 +1810,10 @@ export default function App() {
         WHATSAPP: r[COL.TELEFONE] ? fmtWA(r[COL.TELEFONE]) : null,
       })));
       setLastSync(new Date());
+      setSyncError(null);
     } catch(e) {
       console.error("Erro planilha:", e);
-      setAllLeads([]);
+      setSyncError(e.message || "Não foi possível sincronizar a planilha.");
     } finally {
       setLoading(false);
     }
@@ -1866,6 +1871,14 @@ export default function App() {
           )}
 
           <main style={{ flex:1, overflowY:"auto" }}>
+            {syncError && (
+              <div role="alert" style={{ margin: "16px 28px", padding: 16, color: C.text, background: C.bgCard, border: `1px solid ${C.rose}`, borderRadius: 8 }}>
+                <p>Falha na sincronização: {syncError}</p>
+                <button type="button" onClick={fetchLeads} disabled={loading} style={{ marginTop: 10, padding: "8px 12px", cursor: "pointer" }}>
+                  {loading ? "Sincronizando…" : "Tentar novamente"}
+                </button>
+              </div>
+            )}
             <AnimatePresence mode="wait">
               <motion.div
                 key={active}
