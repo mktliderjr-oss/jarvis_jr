@@ -424,7 +424,7 @@ function Sidebar({ active, setActive }) {
   );
 }
 
-function Topbar() {
+function Topbar({ usuario, onChangeUser }) {
   const [time, setTime] = useState(nowLabel());
   useEffect(() => {
     const t = setInterval(() => setTime(nowLabel()), 30000);
@@ -446,7 +446,93 @@ function Topbar() {
           {time.dia} &nbsp;·&nbsp; {time.hora}
         </span>
       </div>
+      <button
+        type="button"
+        className="profile-switcher"
+        onClick={onChangeUser}
+        aria-label={`Perfil atual: ${usuario}. Trocar perfil`}
+        style={{ display: "flex", alignItems: "center", gap: 9, background: C.bgInput,
+          border: `1px solid ${C.border}`, borderRadius: 8, color: C.text,
+          padding: "7px 10px 7px 8px", cursor: "pointer" }}>
+        <Avatar name={usuario} size={26} />
+        <span style={{ fontSize: 12, fontWeight: 600 }}>{usuario}</span>
+        <span style={{ color: C.text3, fontSize: 11 }}>Trocar</span>
+      </button>
     </header>
+  );
+}
+
+function ProfileGate({ onSelect }) {
+  const perfis = ["Diretor", ...COMERCIANTES];
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body, #root { width: 100%; min-height: 100%; margin: 0; }
+        body { background: ${C.bg}; font-family: 'Manrope', system-ui, sans-serif; }
+        .profile-gate { min-height: 100dvh; display: grid; place-items: center; padding: 40px 20px 52px; color: ${C.text};
+          background: radial-gradient(circle at 50% -15%, rgba(242,138,60,.13), transparent 34%), ${C.bg}; }
+        .profile-panel { width: min(100%, 720px); }
+        .profile-brand { display: flex; justify-content: center; margin-bottom: 34px; }
+        .profile-brand img { max-width: 150px; }
+        .profile-kicker { color: ${C.orange}; text-align: center; text-transform: uppercase; letter-spacing: .18em; font-size: 10px; font-weight: 700; margin-bottom: 10px; }
+        .profile-panel h1 { color: ${C.text}; text-align: center; font-size: clamp(28px, 4vw, 42px); line-height: 1.08; letter-spacing: -1.5px; margin: 0 0 10px; }
+        .profile-panel > p { color: ${C.text2}; text-align: center; font-size: 14px; margin: 0 auto 30px; text-wrap: balance; }
+        .profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .profile-option { min-width: 0; display: flex; align-items: center; gap: 12px; padding: 15px; color: ${C.text}; background: ${C.bgCard}; border: 1px solid ${C.border}; border-radius: 11px; cursor: pointer; text-align: left; transition: background .2s, border-color .2s, transform .2s; }
+        .profile-option:hover { background: ${C.bgHover}; border-color: ${C.border2}; }
+        .profile-option:focus-visible { outline: 2px solid ${C.orange}; outline-offset: 3px; }
+        .profile-option-director { grid-column: 1 / -1; background: ${C.orangeDim}; border-color: ${C.orangeBorder}; }
+        .profile-option > span:nth-child(2) { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+        .profile-option strong { font-size: 14px; font-weight: 700; }
+        .profile-option small { color: ${C.text2}; font-size: 11px; }
+        .profile-arrow { color: ${C.text3}; font-size: 17px; transition: transform .2s, color .2s; }
+        .profile-option:hover .profile-arrow { color: ${C.orange}; transform: translateX(2px); }
+        .profile-note { display: block; color: ${C.text3}; text-align: center; font-size: 11px; margin-top: 18px; }
+        @media (max-width: 560px) {
+          .profile-gate { place-items: start center; padding-top: 30px; }
+          .profile-brand { margin-bottom: 26px; }
+          .profile-grid { grid-template-columns: 1fr; }
+          .profile-option-director { grid-column: auto; }
+        }
+      `}</style>
+      <main className="profile-gate">
+      <section className="profile-panel" aria-labelledby="profile-title">
+        <div className="profile-brand"><LiderLogo /></div>
+        <div className="profile-kicker">Jarvis Jr.</div>
+        <h1 id="profile-title">Quem está entrando?</h1>
+        <p>Escolha seu perfil para abrir o painel com o responsável certo.</p>
+
+        <div className="profile-grid">
+          {perfis.map((nome, index) => {
+            const diretor = nome === "Diretor";
+            return (
+              <motion.button
+                key={nome}
+                type="button"
+                className={`profile-option${diretor ? " profile-option-director" : ""}`}
+                onClick={() => onSelect(nome)}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: index * 0.035 }}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}>
+                <Avatar name={nome} size={38} />
+                <span>
+                  <strong>{nome}</strong>
+                  <small>{diretor ? "Visão geral da operação" : "Área comercial"}</small>
+                </span>
+                <span className="profile-arrow">→</span>
+              </motion.button>
+            );
+          })}
+        </div>
+        <small className="profile-note">Você pode trocar o perfil depois pelo topo do painel.</small>
+      </section>
+      </main>
+    </>
   );
 }
 
@@ -518,7 +604,7 @@ function ResponsavelSelect({ comerciante, setComercian, label = true }) {
 }
 
 // ═══════════════════════════ DASHBOARD ═══════════════════════════════════════
-function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav }) {
+function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav, usuario }) {
   const hoje = todayBR();
 
   const botChamou   = hasBot(leads);
@@ -599,7 +685,7 @@ function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav }) 
       <div className="page-heading" style={{ marginBottom: 28 }}>
         <h1 style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700,
           fontSize: 32, color: C.text, marginBottom: 4 }}>
-          Olá, <span style={{ color: C.orange }}>{comerciante}.</span>
+          Olá, <span style={{ color: C.orange }}>{usuario || comerciante}.</span>
         </h1>
         <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: C.text2 }}>
           Aqui está o resumo da sua operação comercial de hoje.
@@ -1791,6 +1877,19 @@ export default function App() {
   const [syncError, setSyncError] = useState(null);
   const [active, setActive]         = useState("dashboard");
   const [comerciante, setComercian] = useState("Amanda");
+  const [usuario, setUsuario] = useState(() => sessionStorage.getItem("jarvis_usuario") || "");
+
+  function selectUser(nome) {
+    setUsuario(nome);
+    sessionStorage.setItem("jarvis_usuario", nome);
+    if (nome !== "Diretor") setComercian(nome);
+    setActive("dashboard");
+  }
+
+  function changeUser() {
+    sessionStorage.removeItem("jarvis_usuario");
+    setUsuario("");
+  }
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -1829,16 +1928,18 @@ export default function App() {
 
   function renderPage() {
     switch(active) {
-      case "dashboard":  return <PageDashboard leads={leads} totalLeads={totalLeads} comerciante={comerciante} setComercian={setComercian} onNav={setActive} />;
+      case "dashboard":  return <PageDashboard leads={leads} totalLeads={totalLeads} comerciante={comerciante} setComercian={setComercian} onNav={setActive} usuario={usuario} />;
       case "prospeccao": return <PageProspeccao leads={leads} totalLeads={totalLeads} comerciante={comerciante} setComercian={setComercian} />;
       case "base":       return <PageBase leads={leads} />;
       case "analytics":  return <PageAnalytics leads={leads} totalLeads={totalLeads} />;
       case "crm":        return <PageCRM leads={leads} />;
       case "atividades": return <PageAtividades leads={leads} comerciante={comerciante} />;
       case "config":     return <PagePlaceholder title="Configurações" icon="⚙️" />;
-      default:           return <PageDashboard leads={leads} totalLeads={totalLeads} comerciante={comerciante} setComercian={setComercian} onNav={setActive} />;
+      default:           return <PageDashboard leads={leads} totalLeads={totalLeads} comerciante={comerciante} setComercian={setComercian} onNav={setActive} usuario={usuario} />;
     }
   }
+
+  if (!usuario) return <ProfileGate onSelect={selectUser} />;
 
   return (
     <>
@@ -1861,6 +1962,8 @@ export default function App() {
         .kpi-card:hover { border-color: ${C.border2} !important; background: #181A1D !important; }
         .nav-button { position: relative; }
         .nav-button[aria-current='page']::before { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 2px; border-radius: 2px; background: ${C.orange}; }
+        .profile-switcher { transition: background .2s ease, border-color .2s ease; }
+        .profile-switcher:hover { border-color: ${C.orangeBorder} !important; background: ${C.bgHover} !important; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: ${C.bgNav}; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 99px; }
@@ -1883,6 +1986,7 @@ export default function App() {
           .sidebar-help { display: none !important; }
           .app-content { width: 100% !important; margin-left: 0 !important; }
           .app-topbar { height: 48px !important; padding: 0 18px !important; }
+          .profile-switcher > span:last-child { display: none; }
           .page-shell { padding: 24px 18px 36px !important; }
           .page-heading h1 { font-size: 27px !important; }
           .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
@@ -1900,7 +2004,7 @@ export default function App() {
         <Sidebar active={active} setActive={setActive} />
 
         <div className="app-content" style={{ display:"flex", flexDirection:"column", minWidth:0, width:"calc(100% - 240px)", marginLeft: 240 }}>
-          <Topbar />
+          <Topbar usuario={usuario} onChangeUser={changeUser} />
 
           {loading && (
             <motion.div
