@@ -31,17 +31,17 @@ const COL = {
 };
 
 const C = {
-  orange:       "#F97316",
-  orangeHover:  "#EA6C0A",
-  orangeDim:    "rgba(249,115,22,0.12)",
-  orangeBorder: "rgba(249,115,22,0.3)",
-  bg:     "#000000",
-  bgNav:  "#0a0a0a",
-  bgCard: "#0a0a0a",
-  bgInput:"#111111",
-  bgHover:"#252525",
-  border: "rgba(255,255,255,0.07)",
-  border2:"rgba(255,255,255,0.12)",
+  orange:       "#F28A3C",
+  orangeHover:  "#FF9A4D",
+  orangeDim:    "rgba(242,138,60,0.12)",
+  orangeBorder: "rgba(242,138,60,0.30)",
+  bg:     "#0C0D0E",
+  bgNav:  "#111315",
+  bgCard: "#151719",
+  bgInput:"#1B1E21",
+  bgHover:"#202326",
+  border: "rgba(255,255,255,0.075)",
+  border2:"rgba(255,255,255,0.14)",
   text:   "#FFFFFF",
   text2:  "#A0A0A0",
   text3:  "#606060",
@@ -366,7 +366,7 @@ const NAV = [
 
 function Sidebar({ active, setActive }) {
   return (
-    <aside style={{
+    <aside className="app-sidebar" style={{
       width: 240, minWidth: 240, background: C.bgNav,
       borderRight: `1px solid ${C.border}`,
       display: "flex", flexDirection: "column",
@@ -379,7 +379,7 @@ function Sidebar({ active, setActive }) {
         <LiderLogo />
       </div>
 
-      <nav style={{ padding: "12px 10px", flex: 1 }}>
+      <nav className="app-nav" aria-label="Navegação principal" style={{ padding: "12px 10px", flex: 1 }}>
         {NAV.map((item) => (
           <div key={item.id}>
             {item.section && (
@@ -391,6 +391,8 @@ function Sidebar({ active, setActive }) {
             )}
             <motion.button
               onClick={() => setActive(item.id)}
+              aria-current={active === item.id ? "page" : undefined}
+              className="nav-button"
               whileHover={{ x: 3 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -411,7 +413,7 @@ function Sidebar({ active, setActive }) {
         ))}
       </nav>
 
-      <div style={{ margin: "0 10px", padding: "14px", background: C.bgCard,
+      <div className="sidebar-help" style={{ margin: "0 10px", padding: "14px", background: C.bgCard,
         borderRadius: 10, border: `1px solid ${C.border}` }}>
         <div style={{ fontSize: 12, color: C.text2, marginBottom: 4 }}>Precisa de ajuda?</div>
         <div style={{ fontSize: 12, color: C.orange, fontWeight: 600, cursor: "pointer" }}>
@@ -430,7 +432,7 @@ function Topbar() {
   }, []);
 
   return (
-    <div style={{ height: 60, background: C.bgNav, borderBottom: `1px solid ${C.border}`,
+    <header className="app-topbar" style={{ height: 60, background: C.bgNav, borderBottom: `1px solid ${C.border}`,
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "0 28px", flexShrink: 0 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -444,7 +446,7 @@ function Topbar() {
           {time.dia} &nbsp;·&nbsp; {time.hora}
         </span>
       </div>
-    </div>
+    </header>
   );
 }
 
@@ -456,6 +458,7 @@ function KpiCard({ icon, value, label, delta, deltaUp = true, index = 0 }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.06, ease: "easeOut" }}
       whileHover={{ y: -3 }}
+      className="kpi-card"
       style={{ background: C.bgCard, border: `1px solid ${C.border}`,
       borderRadius: 12, padding: "20px 22px" }}>
       <div style={{ color: C.text2, marginBottom: 12 }}>{icon}</div>
@@ -592,8 +595,8 @@ function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav }) 
   }, [leads]);
 
   return (
-    <div style={{ padding: "32px 28px" }}>
-      <div style={{ marginBottom: 28 }}>
+    <div className="page-shell dashboard-page" style={{ padding: "32px 28px" }}>
+      <div className="page-heading" style={{ marginBottom: 28 }}>
         <h1 style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700,
           fontSize: 32, color: C.text, marginBottom: 4 }}>
           Olá, <span style={{ color: C.orange }}>{comerciante}.</span>
@@ -603,16 +606,15 @@ function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav }) 
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+      <section className="kpi-grid" aria-label="Resumo comercial" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
         <KpiCard index={0} icon={Icon.users} value={totalLeads.toLocaleString("pt-BR")} label="Leads na base" delta={fmtDelta(deltaBase)} deltaUp={deltaBase?.up ?? true} />
         <KpiCard index={1} icon={Icon.atividades} value={primContato} label="Primeiro contato" delta={fmtDelta(deltaContato)} deltaUp={deltaContato?.up ?? true} />
-        <KpiCard index={2} icon={Icon.reunioes} value={contratos} label="Contratos fechados" delta={fmtDelta(deltaContrato)} deltaUp={deltaContrato?.up ?? true} />
-
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 3 * 0.06, ease: "easeOut" }}
+          transition={{ duration: 0.35, delay: 2 * 0.06, ease: "easeOut" }}
           whileHover={{ y: -3 }}
+          className="kpi-card"
           style={{ background: C.bgCard, border: `1px solid ${C.border}`,
             borderRadius: 12, padding: "20px 22px", display: "flex", flexDirection: "column" }}>
           <div style={{ color: C.text2, marginBottom: 12 }}>{ActIcon.proposta}</div>
@@ -641,9 +643,10 @@ function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav }) 
             )}
           </div>
         </motion.div>
-      </div>
+        <KpiCard index={3} icon={Icon.reunioes} value={contratos} label="Contratos fechados" delta={fmtDelta(deltaContrato)} deltaUp={deltaContrato?.up ?? true} />
+      </section>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
+      <div className="dashboard-layout" style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <ProspeccaoInline leads={leads} comerciante={comerciante} setComercian={setComercian} />
 
@@ -1840,22 +1843,63 @@ export default function App() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body, #root { width: 100%; height: 100%; overflow-x: hidden; }
-        body { background: ${C.bg}; font-family: 'Inter', sans-serif; }
+        body * { font-family: 'Manrope', system-ui, sans-serif !important; }
+        html { scroll-behavior: smooth; }
+        html, body, #root { width: 100%; min-height: 100%; overflow-x: hidden; }
+        body { background: ${C.bg}; font-family: 'Manrope', system-ui, sans-serif; }
+        button, input, select, textarea { font: inherit; }
+        button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+          outline: 2px solid ${C.orange}; outline-offset: 3px;
+        }
+        .app-shell { min-height: 100dvh; }
+        .page-shell { width: 100%; max-width: 1480px; margin: 0 auto; }
+        .page-heading h1 { letter-spacing: -1.2px; line-height: 1.08; }
+        .kpi-card { position: relative; overflow: hidden; min-height: 168px; transition: border-color .2s ease, background .2s ease, transform .2s ease; }
+        .kpi-card::after { content: ''; position: absolute; inset: 0 0 auto; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent); }
+        .kpi-card:hover { border-color: ${C.border2} !important; background: #181A1D !important; }
+        .nav-button { position: relative; }
+        .nav-button[aria-current='page']::before { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 2px; border-radius: 2px; background: ${C.orange}; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: ${C.bgNav}; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 99px; }
         ::-webkit-scrollbar-thumb:hover { background: ${C.orange}; }
         select option { background: ${C.bgInput}; color: ${C.text}; }
         input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
+        @media (max-width: 1120px) {
+          .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+          .dashboard-layout { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 760px) {
+          .app-shell { display: block !important; overflow: visible !important; }
+          .app-sidebar { position: sticky !important; width: 100% !important; min-width: 0 !important; height: auto !important; bottom: auto !important; padding: 0 !important; overflow: visible !important; }
+          .app-sidebar > div:first-child { display: none !important; }
+          .app-nav { display: flex; gap: 5px; overflow-x: auto; padding: 8px 12px !important; scrollbar-width: none; }
+          .app-nav > div { flex: 0 0 auto; }
+          .app-nav > div > div { display: none !important; }
+          .nav-button { width: auto !important; padding: 9px 12px !important; margin: 0 !important; white-space: nowrap; }
+          .nav-button[aria-current='page']::before { display: none; }
+          .sidebar-help { display: none !important; }
+          .app-content { width: 100% !important; margin-left: 0 !important; }
+          .app-topbar { height: 48px !important; padding: 0 18px !important; }
+          .page-shell { padding: 24px 18px 36px !important; }
+          .page-heading h1 { font-size: 27px !important; }
+          .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+          .kpi-card { min-height: 150px; padding: 17px !important; }
+        }
+        @media (max-width: 460px) {
+          .kpi-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+        }
       `}</style>
 
-      <div style={{ display:"flex", minHeight:"100vh", width:"100vw", background:C.bg, overflow:"hidden" }}>
+      <div className="app-shell" style={{ display:"flex", minHeight:"100dvh", width:"100%", background:C.bg, overflow:"hidden" }}>
         <Sidebar active={active} setActive={setActive} />
 
-        <div style={{ display:"flex", flexDirection:"column", minWidth:0, width:"calc(100vw - 240px)", marginLeft: 240 }}>
+        <div className="app-content" style={{ display:"flex", flexDirection:"column", minWidth:0, width:"calc(100% - 240px)", marginLeft: 240 }}>
           <Topbar />
 
           {loading && (
