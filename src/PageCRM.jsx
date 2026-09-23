@@ -12,7 +12,9 @@
 // A Service Account key JSON contém: client_email + private_key
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { C } from './theme';
+import { WhatsappLogo, MagnifyingGlass, X } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from "motion/react";
 
 // ── CONFIGURAÇÃO ─────────────────────────────────────────────────────────────
@@ -50,24 +52,17 @@ const COMERCIANTES = ["Amanda", "Caique", "Laísa", "Pedro", "Gustavo", "Enzo"];
 
 // Estágios do funil CRM
 const ESTAGIOS = [
-  { id: "novo",       label: "Novos",          color: "#6366F1", desc: "Lead recém-chegado" },
-  { id: "contato",    label: "Em Contato",      color: "#F59E0B", desc: "Primeiro contato feito" },
-  { id: "diagnostico",label: "Diagnóstico",     color: "#06B6D4", desc: "Reunião de diagnóstico" },
-  { id: "proposta",   label: "Proposta Enviada",color: "#8B5CF6", desc: "Aguardando resposta" },
-  { id: "negociacao", label: "Negociação",      color: "#F97316", desc: "Em negociação ativa" },
-  { id: "fechado",    label: "Fechados ✓",      color: "#22C55E", desc: "Contrato assinado" },
-  { id: "perdido",    label: "Perdidos",        color: "#F43F5E", desc: "Lead não convertido" },
+  { id: "novo",       label: "Novos",          color: C.text2, desc: "Lead recém-chegado" },
+  { id: "contato",    label: "Em Contato",      color: C.amber, desc: "Primeiro contato feito" },
+  { id: "diagnostico",label: "Diagnóstico",     color: C.cyan, desc: "Reunião de diagnóstico" },
+  { id: "proposta",   label: "Proposta Enviada",color: C.orange, desc: "Aguardando resposta" },
+  { id: "negociacao", label: "Negociação",      color: C.orange, desc: "Em negociação ativa" },
+  { id: "fechado",    label: "Fechados",        color: C.green, desc: "Contrato assinado" },
+  { id: "perdido",    label: "Perdidos",        color: C.rose, desc: "Lead não convertido" },
 ];
 
 // Cores (herda do App.jsx — copie o objeto C ou importe)
-const C = {
-  orange: "#F97316", orangeHover: "#EA6C0A",
-  orangeDim: "rgba(249,115,22,0.12)", orangeBorder: "rgba(249,115,22,0.3)",
-  bg: "#0F0F0F", bgNav: "#141414", bgCard: "#1E1E1E", bgInput: "#2A2A2A",
-  border: "rgba(255,255,255,0.07)", border2: "rgba(255,255,255,0.12)",
-  text: "#FFFFFF", text2: "#A0A0A0", text3: "#606060",
-  green: "#22C55E", cyan: "#06B6D4", amber: "#F59E0B", rose: "#F43F5E",
-};
+
 
 // ── JWT / OAUTH2 para Service Account ────────────────────────────────────────
 // Gera um access token usando a Service Account key sem backend
@@ -205,8 +200,8 @@ function Avatar({ name, size = 28 }) {
       width: size, height: size, borderRadius: "50%",
       background: colors[idx], display: "flex", alignItems: "center",
       justifyContent: "center", fontWeight: 700,
-      fontSize: size * 0.38, color: "#fff", flexShrink: 0,
-      fontFamily: "'Inter', sans-serif",
+      fontSize: size * 0.38, color: "var(--button-ink)", flexShrink: 0,
+      fontFamily: "'Manrope', sans-serif",
     }}>{initials(name)}</div>
   );
 }
@@ -226,6 +221,11 @@ function LeadCard({ lead, estagio, onOpen, onDragStart, index = 0 }) {
       transition={{ duration: 0.25, delay: Math.min(index, 10) * 0.03 }}
       whileHover={{ y: -2, borderColor: estObj?.color || C.border }}
       draggable
+      className="lead-card"
+      role="button"
+      tabIndex={0}
+      aria-label={`Abrir lead ${lead["NOME DA EMPRESA"] || "sem nome"}`}
+      onKeyDown={e => { if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) {e.preventDefault();onOpen(lead);} }}
       onDragStart={e => { setDragging(true); onDragStart(e, lead); }}
       onDragEnd={() => setDragging(false)}
       onClick={() => onOpen(lead)}
@@ -243,7 +243,7 @@ function LeadCard({ lead, estagio, onOpen, onDragStart, index = 0 }) {
     >
       {/* Empresa */}
       <div style={{
-        fontFamily: "'Inter', sans-serif", fontWeight: 600,
+        fontFamily: "'Manrope', sans-serif", fontWeight: 600,
         fontSize: 13, color: C.text, marginBottom: 6,
         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
       }}>
@@ -254,16 +254,16 @@ function LeadCard({ lead, estagio, onOpen, onDragStart, index = 0 }) {
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
         {lead["CATEGORIA"] && (
           <span style={{
-            background: "rgba(249,115,22,0.12)", color: C.orange,
+            background: C.orangeDim, color: C.orange,
             borderRadius: 4, padding: "2px 6px",
-            fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 600,
+            fontFamily: "'Manrope', sans-serif", fontSize: 10, fontWeight: 600,
           }}>{lead["CATEGORIA"]}</span>
         )}
         {lead["LOCALIZAÇÃO"] && (
           <span style={{
-            background: "rgba(255,255,255,0.05)", color: C.text3,
+            background: C.bgHover, color: C.text3,
             borderRadius: 4, padding: "2px 6px",
-            fontFamily: "'Inter', sans-serif", fontSize: 10,
+            fontFamily: "'Manrope', sans-serif", fontSize: 10,
           }}>{lead["LOCALIZAÇÃO"]}</span>
         )}
       </div>
@@ -272,14 +272,14 @@ function LeadCard({ lead, estagio, onOpen, onDragStart, index = 0 }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Avatar name={lead["COMERCIANTE"]} size={22} />
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: C.text3 }}>
-            {lead["COMERCIANTE"] || "—"}
+          <span style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: C.text3 }}>
+            {lead["COMERCIANTE"] || "-"}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {valor && (
             <span style={{
-              fontFamily: "'Inter', sans-serif", fontSize: 11,
+              fontFamily: "'Manrope', sans-serif", fontSize: 11,
               fontWeight: 600, color: C.green,
             }}>R$ {valor}</span>
           )}
@@ -297,9 +297,7 @@ function LeadCard({ lead, estagio, onOpen, onDragStart, index = 0 }) {
               }}
               title="WhatsApp"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-              </svg>
+              <WhatsappLogo size={17}/>
             </a>
           )}
         </div>
@@ -309,9 +307,9 @@ function LeadCard({ lead, estagio, onOpen, onDragStart, index = 0 }) {
       {lead["NOTAS_CRM"] && (
         <div style={{
           marginTop: 8, padding: "6px 8px",
-          background: "rgba(255,255,255,0.03)",
+          background: C.bgHover,
           borderRadius: 6, borderLeft: `2px solid ${C.amber}`,
-          fontFamily: "'Inter', sans-serif", fontSize: 11, color: C.text3,
+          fontFamily: "'Manrope', sans-serif", fontSize: 11, color: C.text3,
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
           📝 {lead["NOTAS_CRM"]}
@@ -331,18 +329,20 @@ function KanbanColumn({ estagio, leads, onOpen, onDragStart, onDrop, isDragOver,
 
   return (
     <motion.div
+      className="kanban-column"
       onDragOver={e => { e.preventDefault(); onDragOver(); }}
       onDragLeave={onDragLeave}
       onDrop={e => { e.preventDefault(); onDrop(estagio.id); }}
       animate={{
-        backgroundColor: isDragOver ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0)",
+        backgroundColor: isDragOver ? C.bgHover : C.bgInput,
         scale: isDragOver ? 1.015 : 1,
       }}
       transition={{ duration: 0.15 }}
       style={{
-        minWidth: 240, width: 240, flexShrink: 0,
+        minWidth: 258, width: 258, flexShrink: 0,
+        padding: 12, background: C.bgInput,
         display: "flex", flexDirection: "column",
-        borderRadius: 12,
+        borderRadius: 22,
         border: isDragOver ? `1px dashed ${estagio.color}` : "1px solid transparent",
       }}
     >
@@ -352,18 +352,18 @@ function KanbanColumn({ estagio, leads, onOpen, onDragStart, onDrop, isDragOver,
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: estagio.color }} />
             <span style={{
-              fontFamily: "'Inter', sans-serif", fontWeight: 600,
+              fontFamily: "'Manrope', sans-serif", fontWeight: 600,
               fontSize: 12, color: C.text,
             }}>{estagio.label}</span>
           </div>
           <span style={{
-            background: "rgba(255,255,255,0.06)", borderRadius: 99,
-            padding: "2px 8px", fontFamily: "'Inter', sans-serif",
+            background: C.bgHover, borderRadius: 99,
+            padding: "2px 8px", fontFamily: "'Manrope', sans-serif",
             fontSize: 11, fontWeight: 600, color: C.text2,
           }}>{total}</span>
         </div>
         {valorTotal > 0 && (
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: C.green, paddingLeft: 16 }}>
+          <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: C.green, paddingLeft: 16 }}>
             R$ {valorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
           </div>
         )}
@@ -372,8 +372,7 @@ function KanbanColumn({ estagio, leads, onOpen, onDragStart, onDrop, isDragOver,
       {/* Cards */}
       <div style={{
         flex: 1, overflowY: "auto", padding: "4px 4px",
-        minHeight: 80,
-        maxHeight: "calc(100vh - 260px)",
+        maxHeight: "none", minHeight: 0,
       }}>
         <AnimatePresence>
           {leads.map((lead, i) => (
@@ -389,9 +388,9 @@ function KanbanColumn({ estagio, leads, onOpen, onDragStart, onDrop, isDragOver,
         </AnimatePresence>
         {leads.length === 0 && (
           <div style={{
-            border: `1px dashed rgba(255,255,255,0.08)`, borderRadius: 10,
+            border: `1px dashed ${C.border2}`, borderRadius: 10,
             padding: "20px 14px", textAlign: "center",
-            fontFamily: "'Inter', sans-serif", fontSize: 11, color: C.text3,
+            fontFamily: "'Manrope', sans-serif", fontSize: 11, color: C.text3,
           }}>
             Arraste um lead aqui
           </div>
@@ -407,6 +406,14 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
   const [valor, setValor] = useState(lead["VALOR"] || "");
   const [motivo, setMotivo] = useState(lead["MOTIVO"] || "");
   const [comerciante, setComerciante] = useState(lead["COMERCIANTE"] || "");
+
+  const dialogRef = useRef(null);
+  useEffect(() => {
+    const previous = document.activeElement;
+    const dialog = dialogRef.current;
+    dialog.showModal();
+    return () => { dialog.close(); previous?.focus(); };
+  }, []);
 
   const tel = lead["TEL PARA CONTATO"];
   const estagio = ESTAGIOS.find(e => e.id === inferEstagio(lead));
@@ -430,14 +437,14 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
   ];
 
   return (
-    <motion.div
+    <motion.dialog ref={dialogRef} aria-label="Detalhes do lead" onCancel={onClose}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
       style={{
-        position: "fixed", inset: 0, zIndex: 1000,
-        background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
+        position: "fixed", inset: 0, zIndex: 1000, border: 0, margin: 0, width: "100%", height: "100dvh", maxWidth: "none", maxHeight: "none", color: C.text,
+        background: "var(--overlay)", backdropFilter: "blur(4px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: 24,
       }}
@@ -449,7 +456,7 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
         transition={{ duration: 0.2, ease: "easeOut" }}
         onClick={e => e.stopPropagation()}
         style={{
-          background: C.bgCard, borderRadius: 16,
+          background: C.bgCard, borderRadius: 26,
           border: `1px solid ${C.border2}`,
           width: "100%", maxWidth: 560,
           maxHeight: "90vh", overflowY: "auto",
@@ -460,7 +467,7 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
             <div style={{
-              fontFamily: "'Inter', sans-serif", fontWeight: 700,
+              fontFamily: "'Manrope', sans-serif", fontWeight: 700,
               fontSize: 20, color: C.text, marginBottom: 4,
             }}>
               {lead["NOME DA EMPRESA"] || "Lead sem nome"}
@@ -468,26 +475,26 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {estagio && (
                 <span style={{
-                  background: `${estagio.color}20`, color: estagio.color,
+                  background: `color-mix(in srgb, ${estagio.color} 12%, transparent)`, color: estagio.color,
                   borderRadius: 6, padding: "3px 10px",
-                  fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600,
+                  fontFamily: "'Manrope', sans-serif", fontSize: 11, fontWeight: 600,
                 }}>{estagio.label}</span>
               )}
               {lead["BOT CHAMOU?"]?.includes("✅") && (
                 <span style={{
                   background: "rgba(34,197,94,0.12)", color: C.green,
                   borderRadius: 6, padding: "3px 10px",
-                  fontFamily: "'Inter', sans-serif", fontSize: 11,
+                  fontFamily: "'Manrope', sans-serif", fontSize: 11,
                 }}>Bot ativo</span>
               )}
             </div>
           </div>
-          <button onClick={onClose} style={{
-            background: "rgba(255,255,255,0.05)", border: "none",
+          <button aria-label="Fechar detalhes" onClick={onClose} style={{
+            background: C.bgHover, border: "none",
             color: C.text2, width: 32, height: 32, borderRadius: 8,
             cursor: "pointer", fontSize: 18, display: "flex",
             alignItems: "center", justifyContent: "center",
-          }}>×</button>
+          }}><X size={20}/></button>
         </div>
 
         {/* Funil visual */}
@@ -503,11 +510,11 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
               <div key={i} style={{ flex: 1, textAlign: "center" }}>
                 <div style={{
                   height: 4, borderRadius: 99,
-                  background: ok ? C.green : "rgba(255,255,255,0.08)",
+                  background: ok ? C.green : C.bgHover,
                   marginBottom: 4,
                 }} />
                 <span style={{
-                  fontFamily: "'Inter', sans-serif", fontSize: 10,
+                  fontFamily: "'Manrope', sans-serif", fontSize: 10,
                   color: ok ? C.green : C.text3,
                 }}>{step.label}</span>
               </div>
@@ -525,10 +532,10 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
               background: C.bgInput, borderRadius: 8,
               padding: "10px 12px",
             }}>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: C.text3, marginBottom: 2 }}>
+              <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 10, color: C.text3, marginBottom: 2 }}>
                 {f.label}
               </div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: C.text2 }}>
+              <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 12, color: C.text2 }}>
                 {f.value}
               </div>
             </div>
@@ -537,22 +544,23 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
 
         {/* Campos editáveis */}
         <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20, marginBottom: 20 }}>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600, color: C.text2, marginBottom: 12 }}>
+          <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 12, fontWeight: 600, color: C.text2, marginBottom: 12 }}>
             EDITAR
           </div>
 
           {/* Comerciante */}
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: C.text3, display: "block", marginBottom: 4 }}>
+            <label style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: C.text3, display: "block", marginBottom: 4 }}>
               Responsável
             </label>
             <select
+              aria-label="Responsável pelo lead"
               value={comerciante}
               onChange={e => setComerciante(e.target.value)}
               style={{
                 background: C.bgInput, border: `1px solid ${C.border}`,
                 borderRadius: 8, color: C.text,
-                fontFamily: "'Inter', sans-serif", fontSize: 13,
+                fontFamily: "'Manrope', sans-serif", fontSize: 13,
                 padding: "9px 12px", width: "100%", outline: "none", appearance: "none",
               }}
             >
@@ -562,17 +570,18 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
 
           {/* Valor */}
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: C.text3, display: "block", marginBottom: 4 }}>
+            <label style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: C.text3, display: "block", marginBottom: 4 }}>
               Valor (R$)
             </label>
             <input
+              aria-label="Valor do contrato"
               value={valor}
               onChange={e => setValor(e.target.value)}
               placeholder="Ex: 1.500,00"
               style={{
                 background: C.bgInput, border: `1px solid ${C.border}`,
                 borderRadius: 8, color: C.text,
-                fontFamily: "'Inter', sans-serif", fontSize: 13,
+                fontFamily: "'Manrope', sans-serif", fontSize: 13,
                 padding: "9px 12px", width: "100%", outline: "none", boxSizing: "border-box",
               }}
             />
@@ -580,17 +589,18 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
 
           {/* Motivo de perda */}
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: C.text3, display: "block", marginBottom: 4 }}>
+            <label style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: C.text3, display: "block", marginBottom: 4 }}>
               Motivo de perda (se aplicável)
             </label>
             <input
+              aria-label="Motivo de perda"
               value={motivo}
               onChange={e => setMotivo(e.target.value)}
               placeholder="Ex: Preço, sem budget, sem interesse…"
               style={{
                 background: C.bgInput, border: `1px solid ${C.border}`,
                 borderRadius: 8, color: C.text,
-                fontFamily: "'Inter', sans-serif", fontSize: 13,
+                fontFamily: "'Manrope', sans-serif", fontSize: 13,
                 padding: "9px 12px", width: "100%", outline: "none", boxSizing: "border-box",
               }}
             />
@@ -598,10 +608,11 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
 
           {/* Notas */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: C.text3, display: "block", marginBottom: 4 }}>
+            <label style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: C.text3, display: "block", marginBottom: 4 }}>
               Notas internas
             </label>
             <textarea
+              aria-label="Notas internas"
               value={nota}
               onChange={e => setNota(e.target.value)}
               placeholder="Anotações sobre o lead, próximos passos, contexto da conversa…"
@@ -609,7 +620,7 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
               style={{
                 background: C.bgInput, border: `1px solid ${C.border}`,
                 borderRadius: 8, color: C.text,
-                fontFamily: "'Inter', sans-serif", fontSize: 13,
+                fontFamily: "'Manrope', sans-serif", fontSize: 13,
                 padding: "9px 12px", width: "100%", outline: "none",
                 resize: "vertical", boxSizing: "border-box",
               }}
@@ -628,25 +639,24 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
                   background: "rgba(34,197,94,0.12)",
                   border: `1px solid rgba(34,197,94,0.3)`,
                   borderRadius: 10, color: C.green,
-                  fontFamily: "'Inter', sans-serif", fontWeight: 600,
+                  fontFamily: "'Manrope', sans-serif", fontWeight: 600,
                   fontSize: 13, padding: "11px",
                   textDecoration: "none",
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                </svg>
+                <WhatsappLogo size={17}/>
                 WhatsApp
               </a>
             )}
             <button
               onClick={handleSave}
+              className="button-primary"
               disabled={saving}
               style={{
                 flex: 2, background: saving ? C.bgInput : C.orange,
                 border: "none", borderRadius: 10,
                 color: saving ? C.text3 : "#fff",
-                fontFamily: "'Inter', sans-serif", fontWeight: 700,
+                fontFamily: "'Manrope', sans-serif", fontWeight: 700,
                 fontSize: 14, padding: "11px", cursor: saving ? "default" : "pointer",
                 transition: "all .15s",
               }}
@@ -656,7 +666,7 @@ function LeadModal({ lead, rowIndex, onClose, onSave, saving }) {
           </div>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.dialog>
   );
 }
 
@@ -675,6 +685,8 @@ export default function PageCRM({ leads: rawLeads }) {
 
   // Inicializa leads com estágio inferido
   useEffect(() => {
+    // Refresh the editable board when a new sheet snapshot arrives.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLeads(rawLeads.map((lead, i) => ({
       ...lead,
       _rowIndex: i + 2, // +2 porque row 1 é header, índices 1-based
@@ -724,7 +736,7 @@ export default function PageCRM({ leads: rawLeads }) {
       showToast("Lead movido e salvo ✓");
     } catch (err) {
       console.error(err);
-      showToast("Erro ao salvar — verifique as credenciais", "err");
+      showToast("Erro ao salvar - verifique as credenciais", "err");
       // Reverte se falhou
       setLeads(prev => prev.map(l =>
         l._rowIndex === dragLead._rowIndex
@@ -758,7 +770,7 @@ export default function PageCRM({ leads: rawLeads }) {
       setSelectedLead(null);
     } catch (err) {
       console.error(err);
-      showToast("Erro ao salvar — verifique as credenciais", "err");
+      showToast("Erro ao salvar - verifique as credenciais", "err");
     } finally {
       setSaving(false);
     }
@@ -800,19 +812,19 @@ export default function PageCRM({ leads: rawLeads }) {
   const inp = {
     background: C.bgInput, border: `1px solid ${C.border}`,
     borderRadius: 8, color: C.text,
-    fontFamily: "'Inter', sans-serif", fontSize: 13,
+    fontFamily: "'Manrope', sans-serif", fontSize: 13,
     padding: "9px 12px", outline: "none",
   };
 
   return (
-    <div style={{ padding: "28px 28px 0", display: "flex", flexDirection: "column", height: "calc(100vh - 120px)" }}>
+    <div className="page-shell crm-page" style={{ padding: "28px 28px 0", display: "flex", flexDirection: "column", height: "calc(100vh - 120px)" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: 28, color: C.text, marginBottom: 4 }}>
+          <h1 style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 28, color: C.text, marginBottom: 4 }}>
             CRM <span style={{ color: C.orange }}>Kanban</span>
           </h1>
-          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: C.text2 }}>
+          <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 13, color: C.text2 }}>
             {leads.length} leads · Alterações salvas automaticamente na planilha
           </p>
         </div>
@@ -822,7 +834,7 @@ export default function PageCRM({ leads: rawLeads }) {
           {[
             { label: "Em aberto", value: pipeline.emAberto, color: C.orange },
             { label: "Fechados", value: pipeline.fechados, color: C.green },
-            { label: "Pipeline", value: pipeline.somaFechado > 0 ? `R$ ${pipeline.somaFechado.toLocaleString("pt-BR",{minimumFractionDigits:0})}` : "—", color: C.green },
+            { label: "Pipeline", value: pipeline.somaFechado > 0 ? `R$ ${pipeline.somaFechado.toLocaleString("pt-BR",{minimumFractionDigits:0})}` : "-", color: C.green },
           ].map((k, i) => (
             <motion.div key={i}
               initial={{ opacity: 0, y: -8 }}
@@ -832,10 +844,10 @@ export default function PageCRM({ leads: rawLeads }) {
               background: C.bgCard, border: `1px solid ${C.border}`,
               borderRadius: 10, padding: "10px 16px", textAlign: "center",
             }}>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: 20, color: k.color }}>
+              <div style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 20, color: k.color }}>
                 {k.value}
               </div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: C.text3 }}>
+              <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: C.text3 }}>
                 {k.label}
               </div>
             </motion.div>
@@ -847,11 +859,10 @@ export default function PageCRM({ leads: rawLeads }) {
       <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
         <div style={{ position: "relative", flex: 1, maxWidth: 320 }}>
           <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: C.text3, pointerEvents: "none" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
+            <MagnifyingGlass size={18}/>
           </span>
           <input
+            aria-label="Buscar no CRM"
             value={filtro}
             onChange={e => setFiltro(e.target.value)}
             placeholder="Buscar empresa, categoria…"
@@ -859,6 +870,7 @@ export default function PageCRM({ leads: rawLeads }) {
           />
         </div>
         <select
+          aria-label="Filtrar por comerciante"
           value={filterComercian}
           onChange={e => setFilterComercian(e.target.value)}
           style={{ ...inp, appearance: "none", paddingRight: 28, cursor: "pointer" }}
@@ -903,7 +915,7 @@ export default function PageCRM({ leads: rawLeads }) {
             translateX: "-50%",
             background: toast.type === "err" ? "rgba(244,63,94,0.9)" : "rgba(34,197,94,0.9)",
             color: "#fff", borderRadius: 10, padding: "12px 24px",
-            fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600,
+            fontFamily: "'Manrope', sans-serif", fontSize: 13, fontWeight: 600,
             boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
             zIndex: 2000, whiteSpace: "nowrap",
             transform: "translateX(-50%)",

@@ -6,7 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Painel comercial da Líder Jr. para prospecção, CRM e acompanhamento de resultados." />
     <meta name="theme-color" content="#0C0D0E" />
-    <title>Jarvis Jr. — Painel comercial</title>
+    <title>Jarvis Jr. | Painel comercial</title>
+    <script>
+      // Apply the saved theme before React paints to prevent a light flash.
+      try {
+        var preference = localStorage.getItem('jarvis_theme');
+        if (!['light', 'dark', 'beige', 'system'].includes(preference)) preference = 'system';
+        var resolved = preference === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : preference;
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.style.colorScheme = resolved === 'dark' ? 'dark' : 'light';
+      } catch { /* The theme hook also handles unavailable browser storage. */ }
+    </script>
   </head>
   <body>
     <div id="root"></div>

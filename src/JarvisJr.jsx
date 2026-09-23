@@ -1,11 +1,16 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, LabelList,
 } from "recharts";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import liderLogo from "./lider_jr_logo.png";
 import PageCRM from "./PageCRM";
+import { C, useTheme } from './theme';
+import AppShell from './AppShell';
+import PageSettings from './PageSettings';
+import { SquaresFour, MagnifyingGlass, Kanban, CalendarBlank, Pulse, Database, ChartBar, SlidersHorizontal, User, MapPin, Tag, Users, Funnel, ArrowRight, TrendUp, ClockCounterClockwise, Target, Phone, FileText, Handshake, CaretDown, DownloadSimple, WarningCircle } from '@phosphor-icons/react';
+import './app-ui.css';
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const WEBHOOK_URL = "https://jarvis-n8n.qssazf.easypanel.host/webhook-test/jarvis_jr";
@@ -29,30 +34,6 @@ const COL = {
   VALOR:            "VALOR",
   MOTIVO:           "MOTIVO",
 };
-
-const C = {
-  orange:       "#F28A3C",
-  orangeHover:  "#FF9A4D",
-  orangeDim:    "rgba(242,138,60,0.12)",
-  orangeBorder: "rgba(242,138,60,0.30)",
-  bg:     "#0C0D0E",
-  bgNav:  "#111315",
-  bgCard: "#151719",
-  bgInput:"#1B1E21",
-  bgHover:"#202326",
-  border: "rgba(255,255,255,0.075)",
-  border2:"rgba(255,255,255,0.14)",
-  text:   "#FFFFFF",
-  text2:  "#A0A0A0",
-  text3:  "#606060",
-  green:  "#22C55E",
-  greenDim:"rgba(34,197,94,0.15)",
-  cyan:   "#06B6D4",
-  amber:  "#F59E0B",
-  rose:   "#F43F5E",
-};
-
-const PALETTE = [C.orange, C.cyan, C.green, C.amber, C.rose, "#8B5CF6"];
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function parseCSV(text) {
@@ -103,13 +84,6 @@ function hasBot(arr) {
   return arr.filter(r => (r[COL.BOT] || "").includes("✅")).length;
 }
 
-function nowLabel() {
-  const d = new Date();
-  const dia = d.toLocaleDateString("pt-BR", { weekday:"long", day:"numeric", month:"long" });
-  const hora = d.toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" });
-  return { dia: dia.charAt(0).toUpperCase() + dia.slice(1), hora };
-}
-
 function initials(name) {
   return name.split(" ").slice(0,2).map(p=>p[0].toUpperCase()).join("");
 }
@@ -149,142 +123,15 @@ function fmtDelta(d) {
   return `${d.up ? "↑" : "↓"} ${Math.abs(d.pct)}% vs mês anterior`;
 }
 
-// ── SVG ICONS ─────────────────────────────────────────────────────────────────
+// One icon family across navigation, forms and data.
 const Icon = {
-  dashboard: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-      <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-    </svg>
-  ),
-  prospeccao: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-    </svg>
-  ),
-  crm: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  reunioes: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-      <line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-  ),
-  atividades: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-    </svg>
-  ),
-  base: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-    </svg>
-  ),
-  analytics: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-      <line x1="6" y1="20" x2="6" y2="14"/>
-    </svg>
-  ),
-  config: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
-    </svg>
-  ),
-  usuarios: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-      <circle cx="12" cy="7" r="4"/>
-    </svg>
-  ),
-  location: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-      <circle cx="12" cy="10" r="3"/>
-    </svg>
-  ),
-  tag: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-      <line x1="7" y1="7" x2="7.01" y2="7"/>
-    </svg>
-  ),
-  users: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  filter: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-    </svg>
-  ),
-  search: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-    </svg>
-  ),
-  arrow: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-    </svg>
-  ),
-  trend: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-      <polyline points="17 6 23 6 23 12"/>
-    </svg>
-  ),
-  history: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
-    </svg>
-  ),
-  target: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
-    </svg>
-  ),
+ dashboard: <SquaresFour size={20}/>, prospeccao: <MagnifyingGlass size={20}/>, crm: <Kanban size={20}/>,
+ reunioes: <CalendarBlank size={20}/>, atividades: <Pulse size={20}/>, base: <Database size={20}/>, analytics: <ChartBar size={20}/>,
+ config: <SlidersHorizontal size={20}/>, usuarios: <User size={20}/>, location: <MapPin size={18}/>, tag: <Tag size={18}/>,
+ users: <Users size={20}/>, filter: <Funnel size={18}/>, search: <MagnifyingGlass size={18}/>, arrow: <ArrowRight size={17}/>,
+ trend: <TrendUp size={18}/>, history: <ClockCounterClockwise size={18}/>, target: <Target size={20}/>,
 };
-
-// ── ÍCONES DE ATIVIDADE ───────────────────────────────────────────────────────
-const ActIcon = {
-  leads: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  contato: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.39 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-    </svg>
-  ),
-  diagnostico: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-    </svg>
-  ),
-  proposta: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-      <polyline points="14 2 14 8 20 8"/>
-      <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-      <polyline points="10 9 9 9 8 9"/>
-    </svg>
-  ),
-};
+const ActIcon = { leads: <Users size={18}/>, contato: <Phone size={18}/>, diagnostico: <Pulse size={18}/>, proposta: <FileText size={18}/> };
 
 const LiderLogo = () => (
   <img src={liderLogo} alt="Líder Jr." style={{ width: 140, height: "auto", display: "block" }} />
@@ -294,18 +141,18 @@ function Avatar({ name, size = 36 }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%",
-      background: C.orange, display: "flex", alignItems: "center",
+      background: "var(--button)", display: "flex", alignItems: "center",
       justifyContent: "center", fontWeight: 700,
-      fontSize: size * 0.35, color: "#fff", flexShrink: 0,
-      fontFamily: "'Inter', sans-serif",
-    }}>{initials(name)}</div>
+      fontSize: size * 0.35, color: "var(--button-ink)", flexShrink: 0,
+      fontFamily: "'Manrope', sans-serif",
+    }}>{name ? initials(name) : "?"}</div>
   );
 }
 
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "#2A2A2A", border: `1px solid ${C.border2}`,
+    <div className="panel" style={{ background: C.bgCard, border: `1px solid ${C.border2}`,
       borderRadius: 8, padding: "8px 12px" }}>
       {label && <div style={{ fontSize: 11, color: C.text2, marginBottom: 4 }}>{label}</div>}
       {payload.map((p, i) => (
@@ -317,10 +164,8 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-function hexToRgba(hex, alpha) {
-  const h = hex.replace("#", "");
-  const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+function hexToRgba(color, alpha) {
+  return `color-mix(in srgb, ${color} ${alpha * 100}%, transparent)`;
 }
 
 const COM_COLORS = {
@@ -340,125 +185,16 @@ function RankedBarChart({ data, colorHex, height }) {
         <XAxis type="number" hide />
         <YAxis type="category" dataKey="name" width={130}
           tick={{ fontSize:12, fill:C.text2 }} tickLine={false} axisLine={false} />
-        <Tooltip content={<ChartTooltip />} cursor={{ fill:"rgba(255,255,255,0.03)" }} />
+        <Tooltip content={<ChartTooltip />} cursor={{ fill:C.bgHover }} />
         <Bar dataKey="value" name="Leads" radius={[0,6,6,0]} barSize={18} animationDuration={650}>
           {data.map((_, i) => (
             <Cell key={i} fill={hexToRgba(colorHex, 0.95 - i * (0.55 / Math.max(1, data.length)))} />
           ))}
           <LabelList dataKey="value" position="right"
-            style={{ fill:C.text2, fontSize:11, fontWeight:600, fontFamily:"'Inter',sans-serif" }} />
+            style={{ fill:C.text2, fontSize:11, fontWeight:600, fontFamily:"'Manrope',sans-serif" }} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
-  );
-}
-
-// ── SIDEBAR ───────────────────────────────────────────────────────────────────
-const NAV = [
-  { section: null,        id: "dashboard",   label: "Dashboard",     icon: Icon.dashboard },
-  { section: "COMERCIAL", id: "prospeccao",  label: "Prospecção",    icon: Icon.prospeccao },
-  { section: null,        id: "crm",         label: "CRM",           icon: Icon.crm },
-  { section: null,        id: "atividades",  label: "Atividades",    icon: Icon.atividades },
-  { section: "DADOS",     id: "base",        label: "Base de Leads", icon: Icon.base },
-  { section: null,        id: "analytics",   label: "Analytics",     icon: Icon.analytics },
-  { section: "SISTEMA",   id: "config",      label: "Configurações", icon: Icon.config },
-];
-
-function Sidebar({ active, setActive }) {
-  return (
-    <aside className="app-sidebar" style={{
-      width: 240, minWidth: 240, background: C.bgNav,
-      borderRight: `1px solid ${C.border}`,
-      display: "flex", flexDirection: "column",
-      padding: "0 0 24px", position: "fixed",
-      left: 0, top: 0, bottom: 0,
-      height: "100vh", overflowY: "auto", zIndex: 100,
-    }}>
-      <div style={{ padding: "20px 20px 18px", borderBottom: `1px solid ${C.border}`,
-        display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <LiderLogo />
-      </div>
-
-      <nav className="app-nav" aria-label="Navegação principal" style={{ padding: "12px 10px", flex: 1 }}>
-        {NAV.map((item) => (
-          <div key={item.id}>
-            {item.section && (
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10,
-                fontWeight: 600, letterSpacing: "1.5px", color: C.text3,
-                textTransform: "uppercase", padding: "16px 10px 6px" }}>
-                {item.section}
-              </div>
-            )}
-            <motion.button
-              onClick={() => setActive(item.id)}
-              aria-current={active === item.id ? "page" : undefined}
-              className="nav-button"
-              whileHover={{ x: 3 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              style={{
-                display: "flex", alignItems: "center", gap: 10,
-                width: "100%", padding: "9px 12px", borderRadius: 8,
-                background: active === item.id ? C.orangeDim : "transparent",
-                border: active === item.id ? `1px solid ${C.orangeBorder}` : "1px solid transparent",
-                color: active === item.id ? C.orange : C.text2,
-                fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500,
-                cursor: "pointer", transition: "background .15s, border-color .15s, color .15s", textAlign: "left",
-                marginBottom: 2,
-              }}>
-              <span style={{ opacity: active === item.id ? 1 : 0.6 }}>{item.icon}</span>
-              {item.label}
-            </motion.button>
-          </div>
-        ))}
-      </nav>
-
-      <div className="sidebar-help" style={{ margin: "0 10px", padding: "14px", background: C.bgCard,
-        borderRadius: 10, border: `1px solid ${C.border}` }}>
-        <div style={{ fontSize: 12, color: C.text2, marginBottom: 4 }}>Precisa de ajuda?</div>
-        <div style={{ fontSize: 12, color: C.orange, fontWeight: 600, cursor: "pointer" }}>
-          Fale com o suporte
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-function Topbar({ usuario, onChangeUser }) {
-  const [time, setTime] = useState(nowLabel());
-  useEffect(() => {
-    const t = setInterval(() => setTime(nowLabel()), 30000);
-    return () => clearInterval(t);
-  }, []);
-
-  return (
-    <header className="app-topbar" style={{ height: 60, background: C.bgNav, borderBottom: `1px solid ${C.border}`,
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "0 28px", flexShrink: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <button style={{ background: "none", border: "none", color: C.text2, cursor: "pointer" }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-        </button>
-        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: C.text2 }}>
-          {time.dia} &nbsp;·&nbsp; {time.hora}
-        </span>
-      </div>
-      <button
-        type="button"
-        className="profile-switcher"
-        onClick={onChangeUser}
-        aria-label={`Perfil atual: ${usuario}. Trocar perfil`}
-        style={{ display: "flex", alignItems: "center", gap: 9, background: C.bgInput,
-          border: `1px solid ${C.border}`, borderRadius: 8, color: C.text,
-          padding: "7px 10px 7px 8px", cursor: "pointer" }}>
-        <Avatar name={usuario} size={26} />
-        <span style={{ fontSize: 12, fontWeight: 600 }}>{usuario}</span>
-        <span style={{ color: C.text3, fontSize: 11 }}>Trocar</span>
-      </button>
-    </header>
   );
 }
 
@@ -467,37 +203,7 @@ function ProfileGate({ onSelect }) {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-        *, *::before, *::after { box-sizing: border-box; }
-        html, body, #root { width: 100%; min-height: 100%; margin: 0; }
-        body { background: ${C.bg}; font-family: 'Manrope', system-ui, sans-serif; }
-        .profile-gate { min-height: 100dvh; display: grid; place-items: center; padding: 40px 20px 52px; color: ${C.text};
-          background: radial-gradient(circle at 50% -15%, rgba(242,138,60,.13), transparent 34%), ${C.bg}; }
-        .profile-panel { width: min(100%, 720px); }
-        .profile-brand { display: flex; justify-content: center; margin-bottom: 34px; }
-        .profile-brand img { max-width: 150px; }
-        .profile-kicker { color: ${C.orange}; text-align: center; text-transform: uppercase; letter-spacing: .18em; font-size: 10px; font-weight: 700; margin-bottom: 10px; }
-        .profile-panel h1 { color: ${C.text}; text-align: center; font-size: clamp(28px, 4vw, 42px); line-height: 1.08; letter-spacing: -1.5px; margin: 0 0 10px; }
-        .profile-panel > p { color: ${C.text2}; text-align: center; font-size: 14px; margin: 0 auto 30px; text-wrap: balance; }
-        .profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-        .profile-option { min-width: 0; display: flex; align-items: center; gap: 12px; padding: 15px; color: ${C.text}; background: ${C.bgCard}; border: 1px solid ${C.border}; border-radius: 11px; cursor: pointer; text-align: left; transition: background .2s, border-color .2s, transform .2s; }
-        .profile-option:hover { background: ${C.bgHover}; border-color: ${C.border2}; }
-        .profile-option:focus-visible { outline: 2px solid ${C.orange}; outline-offset: 3px; }
-        .profile-option-director { grid-column: 1 / -1; background: ${C.orangeDim}; border-color: ${C.orangeBorder}; }
-        .profile-option > span:nth-child(2) { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
-        .profile-option strong { font-size: 14px; font-weight: 700; }
-        .profile-option small { color: ${C.text2}; font-size: 11px; }
-        .profile-arrow { color: ${C.text3}; font-size: 17px; transition: transform .2s, color .2s; }
-        .profile-option:hover .profile-arrow { color: ${C.orange}; transform: translateX(2px); }
-        .profile-note { display: block; color: ${C.text3}; text-align: center; font-size: 11px; margin-top: 18px; }
-        @media (max-width: 560px) {
-          .profile-gate { place-items: start center; padding-top: 30px; }
-          .profile-brand { margin-bottom: 26px; }
-          .profile-grid { grid-template-columns: 1fr; }
-          .profile-option-director { grid-column: auto; }
-        }
-      `}</style>
+      
       <main className="profile-gate">
       <section className="profile-panel" aria-labelledby="profile-title">
         <div className="profile-brand"><LiderLogo /></div>
@@ -524,7 +230,7 @@ function ProfileGate({ onSelect }) {
                   <strong>{nome}</strong>
                   <small>{diretor ? "Visão geral da operação" : "Área comercial"}</small>
                 </span>
-                <span className="profile-arrow">→</span>
+                <ArrowRight className="profile-arrow" size={20}/>
               </motion.button>
             );
           })}
@@ -537,37 +243,15 @@ function ProfileGate({ onSelect }) {
 }
 
 // ── KPI CARD ──────────────────────────────────────────────────────────────────
-function KpiCard({ icon, value, label, delta, deltaUp = true, index = 0 }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: index * 0.06, ease: "easeOut" }}
-      whileHover={{ y: -3 }}
-      className="kpi-card"
-      style={{ background: C.bgCard, border: `1px solid ${C.border}`,
-      borderRadius: 12, padding: "20px 22px" }}>
-      <div style={{ color: C.text2, marginBottom: 12 }}>{icon}</div>
-      <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700,
-        fontSize: 32, color: C.text, lineHeight: 1, marginBottom: 4 }}>{value}</div>
-      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13,
-        color: C.text2, marginBottom: 10 }}>{label}</div>
-      {delta && (
-        <div style={{ display: "flex", alignItems: "center", gap: 4,
-          fontFamily: "'Inter', sans-serif", fontSize: 12,
-          color: deltaUp ? C.green : C.rose }}>
-          {delta}
-        </div>
-      )}
-    </motion.div>
-  );
+function KpiCard({ icon, value, label, delta, deltaUp = true }) {
+  return <div className="summary-metric"><div className="metric-label">{icon}<span>{label}</span></div><strong className="metric-value">{value}</strong>{delta && <span className={deltaUp ? 'metric-delta positive' : 'metric-delta negative'}>{delta}</span>}</div>;
 }
 
 // ── RESPONSÁVEL SELECTOR ──────────────────────────────────────────────────────
 function ResponsavelSelect({ comerciante, setComercian, label = true }) {
   const inp = {
     background: C.bgInput, border: `1px solid ${C.border}`,
-    borderRadius: 8, color: C.text, fontFamily: "'Inter', sans-serif",
+    borderRadius: 8, color: C.text, fontFamily: "'Manrope', sans-serif",
     fontSize: 13, padding: "10px 14px", outline: "none",
     width: "100%", boxSizing: "border-box", appearance: "none",
     cursor: "pointer",
@@ -577,7 +261,7 @@ function ResponsavelSelect({ comerciante, setComercian, label = true }) {
     <div>
       {label && (
         <label style={{ display: "flex", alignItems: "center", gap: 6,
-          fontFamily: "'Inter', sans-serif", fontSize: 12, color: C.text2, marginBottom: 6 }}>
+          fontFamily: "'Manrope', sans-serif", fontSize: 12, color: C.text2, marginBottom: 6 }}>
           {Icon.users} Responsável
         </label>
       )}
@@ -587,16 +271,17 @@ function ResponsavelSelect({ comerciante, setComercian, label = true }) {
           <Avatar name={comerciante} size={24} />
         </div>
         <select
+          aria-label="Responsável"
           value={comerciante}
           onChange={e => setComercian(e.target.value)}
           style={{ ...inp, paddingLeft: 42, paddingRight: 32 }}
         >
+          <option value="" disabled>Selecione o responsável</option>
           {COMERCIANTES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <span style={{ position: "absolute", right: 10, top: "50%",
           transform: "translateY(-50%)", color: C.text3, pointerEvents: "none" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+          <CaretDown size={14}/>
         </span>
       </div>
     </div>
@@ -604,17 +289,14 @@ function ResponsavelSelect({ comerciante, setComercian, label = true }) {
 }
 
 // ═══════════════════════════ DASHBOARD ═══════════════════════════════════════
-function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav, usuario }) {
+function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav }) {
   const hoje = todayBR();
 
-  const botChamou   = hasBot(leads);
   const primContato = hasSim(leads, COL.PRIMEIRO_CONTATO);
-  const diagnostico = hasSim(leads, COL.DIAGNOSTICO);
   const propostas   = hasSim(leads, COL.PROPOSTA);
   const contratos   = hasSim(leads, COL.CONTRATO);
   const pipeline    = somaValor(leads);
 
-  const taxa = botChamou > 0 ? ((primContato / botChamou) * 100).toFixed(0) : 0;
 
   const leadsHoje       = leads.filter(r => r[COL.DATA] === hoje).length;
   const primContatoHoje = leads.filter(r => r[COL.DATA] === hoje && (r[COL.PRIMEIRO_CONTATO] || "").trim().toLowerCase() === "sim").length;
@@ -635,27 +317,13 @@ function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav, us
     return parts.length === 3 && `${parts[1]}/${parts[2]}` === mesAtual;
   }).length;
 
-  const [meta, setMeta]           = useState(100);
-  const [editMeta, setEditMeta]   = useState(false);
-  const [metaInput, setMetaInput] = useState("100");
-  const STORAGE_KEY = "jarvis_meta_mensal";
-
-  useEffect(() => {
-    async function loadMeta() {
-      try {
-        const r = await window.storage.get(STORAGE_KEY);
-        if (r?.value) { setMeta(Number(r.value)); setMetaInput(r.value); }
-      } catch {}
-    }
-    loadMeta();
-  }, []);
-
-  async function saveMeta() {
+  const [meta, setMeta] = useState(() => { try { return Math.max(1, Number(localStorage.getItem('jarvis_meta_mensal')) || 100); } catch { return 100; } });
+  const [editMeta, setEditMeta] = useState(false);
+  const [metaInput, setMetaInput] = useState(String(meta));
+  function saveMeta() {
     const val = Math.max(1, Number(metaInput) || 1);
-    setMeta(val);
-    setMetaInput(String(val));
-    setEditMeta(false);
-    try { await window.storage.set(STORAGE_KEY, String(val), true); } catch {}
+    setMeta(val); setMetaInput(String(val)); setEditMeta(false);
+    try { localStorage.setItem('jarvis_meta_mensal', String(val)); } catch { /* Kept in this session. */ }
   }
 
   const pct = Math.min(100, Math.round((leadsDoMes / meta) * 100));
@@ -681,213 +349,47 @@ function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav, us
   }, [leads]);
 
   return (
-    <div className="page-shell dashboard-page" style={{ padding: "32px 28px" }}>
-      <div className="page-heading" style={{ marginBottom: 28 }}>
-        <h1 style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700,
-          fontSize: 32, color: C.text, marginBottom: 4 }}>
-          Olá, <span style={{ color: C.orange }}>{usuario || comerciante}.</span>
-        </h1>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: C.text2 }}>
-          Aqui está o resumo da sua operação comercial de hoje.
-        </p>
-      </div>
-
-      <section className="kpi-grid" aria-label="Resumo comercial" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-        <KpiCard index={0} icon={Icon.users} value={totalLeads.toLocaleString("pt-BR")} label="Leads na base" delta={fmtDelta(deltaBase)} deltaUp={deltaBase?.up ?? true} />
-        <KpiCard index={1} icon={Icon.atividades} value={primContato} label="Primeiro contato" delta={fmtDelta(deltaContato)} deltaUp={deltaContato?.up ?? true} />
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 2 * 0.06, ease: "easeOut" }}
-          whileHover={{ y: -3 }}
-          className="kpi-card"
-          style={{ background: C.bgCard, border: `1px solid ${C.border}`,
-            borderRadius: 12, padding: "20px 22px", display: "flex", flexDirection: "column" }}>
-          <div style={{ color: C.text2, marginBottom: 12 }}>{ActIcon.proposta}</div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700,
-            fontSize: 32, color: C.text, lineHeight: 1, marginBottom: 4 }}>{propostas}</div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13,
-            color: C.text2, marginBottom: 10 }}>Propostas enviadas</div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            {fmtDelta(deltaProposta) ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 4,
-                fontFamily: "'Inter', sans-serif", fontSize: 12,
-                color: (deltaProposta?.up ?? true) ? C.green : C.rose }}>
-                {fmtDelta(deltaProposta)}
-              </div>
-            ) : <span />}
-            {pipeline > 0 && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.4 }}
-                style={{ background: "rgba(34,197,94,0.12)", border: `1px solid ${C.green}`,
-                  borderRadius: 20, padding: "3px 10px", fontFamily: "'Inter', sans-serif",
-                  fontSize: 11, fontWeight: 600, color: C.green, whiteSpace: "nowrap" }}>
-                R$ {pipeline.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </motion.span>
-            )}
-          </div>
-        </motion.div>
-        <KpiCard index={3} icon={Icon.reunioes} value={contratos} label="Contratos fechados" delta={fmtDelta(deltaContrato)} deltaUp={deltaContrato?.up ?? true} />
+    <div className="page-shell dashboard-page">
+      <div className="page-heading heading-with-action"><div><h1>Dashboard</h1><p>Resumo da operação comercial.</p></div><button className="button-primary" onClick={() => onNav('prospeccao')}><MagnifyingGlass size={19}/> Nova prospecção</button></div>
+      <section className="commercial-summary" aria-label="Resumo comercial">
+        <KpiCard icon={<Database size={22}/>} value={totalLeads.toLocaleString('pt-BR')} label="Leads na base" delta={fmtDelta(deltaBase)} deltaUp={deltaBase?.up ?? true}/>
+        <KpiCard icon={<Phone size={22}/>} value={primContato} label="Primeiro contato" delta={fmtDelta(deltaContato)} deltaUp={deltaContato?.up ?? true}/>
+        <KpiCard icon={<FileText size={22}/>} value={propostas} label="Propostas enviadas" delta={fmtDelta(deltaProposta)} deltaUp={deltaProposta?.up ?? true}/>
+        <KpiCard icon={<Handshake size={22}/>} value={contratos} label="Contratos fechados" delta={fmtDelta(deltaContrato)} deltaUp={deltaContrato?.up ?? true}/>
+        {pipeline > 0 && <div className="summary-pipeline">Valor em propostas <strong>{pipeline.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</strong></div>}
       </section>
-
-      <div className="dashboard-layout" style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <ProspeccaoInline leads={leads} comerciante={comerciante} setComercian={setComercian} />
-
-          <div style={{ background: C.bgCard, border: `1px solid ${C.border}`,
-            borderRadius: 12, padding: "20px 22px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between",
-              alignItems: "center", marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600,
-                fontSize: 16, color: C.text }}>Desempenho da prospecção</div>
-              <div style={{ background: C.bgInput, border: `1px solid ${C.border}`,
-                borderRadius: 8, padding: "5px 12px", display: "flex", alignItems: "center", gap: 6,
-                fontFamily: "'Inter', sans-serif", fontSize: 12, color: C.text2, cursor: "pointer" }}>
-                Últimos 14 dias
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={daily} margin={{ top:0, right:0, bottom:0, left:-20 }}>
-                <defs>
-                  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={C.orange} stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor={C.orange} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                <XAxis dataKey="date" tick={{ fontSize:10, fill:C.text3 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize:10, fill:C.text3 }} tickLine={false} axisLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="qty" name="Leads" stroke={C.orange}
-                  strokeWidth={2} fill="url(#grad)" />
+      <div className="dashboard-layout">
+        <div className="dashboard-primary">
+          <ProspeccaoInline comerciante={comerciante} setComercian={setComercian} onNav={onNav}/>
+          <section className="panel performance-panel">
+            <div className="panel-heading"><ChartBar size={22}/><h2>Desempenho da prospecção</h2><span className="period-label">Últimos 14 dias com registros</span></div>
+            {daily.length ? <ResponsiveContainer width="100%" height={224}>
+              <AreaChart data={daily} margin={{top:16, right:8, bottom:0, left:-22}}>
+                <defs><linearGradient id="activity-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.orange} stopOpacity={0.18}/><stop offset="100%" stopColor={C.orange} stopOpacity={0}/></linearGradient></defs>
+                <CartesianGrid stroke={C.border} vertical={false}/>
+                <XAxis dataKey="date" tick={{fontSize:11, fill:C.text3}} tickLine={false} axisLine={false}/>
+                <YAxis tick={{fontSize:11, fill:C.text3}} tickLine={false} axisLine={false} allowDecimals={false}/>
+                <Tooltip content={<ChartTooltip/>}/><Area type="monotone" dataKey="qty" name="Leads" stroke={C.orange} strokeWidth={2.5} fill="url(#activity-fill)" isAnimationActive={false}/>
               </AreaChart>
-            </ResponsiveContainer>
-          </div>
+            </ResponsiveContainer> : <div className="empty-state"><ChartBar size={32}/><strong>Nenhum registro no período</strong><p>O gráfico será atualizado quando houver dados na base.</p></div>}
+          </section>
         </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <div style={{ background: C.bgCard, border: `1px solid ${C.border}`,
-            borderRadius: 12, padding: "16px 20px",
-            display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10,
-              background: "rgba(255,255,255,0.05)", display: "flex",
-              alignItems:"center", justifyContent:"center", color: C.text2 }}>
-              {Icon.users}
-            </div>
-            <div>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600,
-                fontSize:14, color:C.text }}>Equipe Comercial</div>
-              <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:3 }}>
-                <span style={{ width:7, height:7, borderRadius:"50%",
-                  background:C.green, display:"inline-block" }} />
-                <span style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2 }}>
-                  {COMERCIANTES.length} membros ativos
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ background: C.bgCard, border: `1px solid ${C.border}`,
-            borderRadius: 12, padding: "20px 20px" }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:13,
-                color:C.text2, display:"flex", alignItems:"center", gap:6 }}>
-                {Icon.target} Meta mensal de leads
-              </div>
-              <button
-                onClick={() => { setEditMeta(v => !v); setMetaInput(String(meta)); }}
-                style={{
-                  background: "none", border: `1px solid ${C.orangeBorder}`,
-                  borderRadius: 4, color: C.orange, fontFamily: "'Inter',sans-serif",
-                  fontSize: 11, cursor: "pointer", padding: "2px 8px",
-                }}>
-                {editMeta ? "Cancelar" : "Editar meta"}
-              </button>
-            </div>
-
-            {editMeta ? (
-              <div style={{ display:"flex", gap:8, margin:"10px 0 14px" }}>
-                <input
-                  type="number" value={metaInput} min={1}
-                  onChange={e => setMetaInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && saveMeta()}
-                  style={{
-                    flex: 1, background: C.bgInput, border: `1px solid ${C.orangeBorder}`,
-                    borderRadius: 8, color: C.text, fontFamily: "'Inter',sans-serif",
-                    fontSize: 14, padding: "8px 12px", outline: "none",
-                  }}
-                />
-                <button onClick={saveMeta} style={{
-                  background: C.orange, border: "none", borderRadius: 8,
-                  color: "#fff", fontFamily: "'Inter',sans-serif", fontWeight: 600,
-                  fontSize: 13, padding: "8px 16px", cursor: "pointer",
-                }}>Salvar</button>
-              </div>
-            ) : (
-              <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:700,
-                fontSize:36, color:C.text, marginBottom:12 }}>{pct}%</div>
-            )}
-
-            <div style={{ height:6, borderRadius:99, background:"rgba(255,255,255,0.08)",
-              marginBottom:10, overflow:"hidden" }}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${pct}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                style={{ height:"100%", borderRadius:99,
-                background:`linear-gradient(90deg, ${C.orange}, #FBBF24)` }} />
-            </div>
-            <div style={{ display:"flex", justifyContent:"space-between",
-              fontFamily:"'Inter',sans-serif", fontSize:11, color:C.text3, marginBottom:16 }}>
-              <span>Meta: {meta} leads</span>
-              <span>{leadsDoMes} este mês</span>
-            </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-              <div style={{ background:C.bgInput, borderRadius:8, padding:"10px 12px" }}>
-                <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:22, color:C.green }}>{leadsDoMes}</div>
-                <div style={{ fontFamily:"'Inter',sans-serif", fontSize:11, color:C.text3, marginTop:2 }}>Leads este mês</div>
-              </div>
-              <div style={{ background:C.bgInput, borderRadius:8, padding:"10px 12px" }}>
-                <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:22, color:C.orange }}>{Math.max(0, meta - leadsDoMes)}</div>
-                <div style={{ fontFamily:"'Inter',sans-serif", fontSize:11, color:C.text3, marginTop:2 }}>Restam para meta</div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ background: C.bgCard, border: `1px solid ${C.border}`,
-            borderRadius: 12, padding: "20px 20px", flex:1 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600,
-                fontSize:14, color:C.text, display:"flex", alignItems:"center", gap:8 }}>
-                {Icon.atividades} Atividade de hoje
-              </div>
-              <span style={{ color:C.text3, cursor:"pointer", fontSize:18 }}>···</span>
-            </div>
-            {[
-              { icon: ActIcon.leads,       n: leadsHoje,         txt: "Leads prospectados" },
-              { icon: ActIcon.contato,     n: primContatoHoje,   txt: "Primeiros contatos" },
-              { icon: ActIcon.diagnostico, n: diagnosticoHoje,   txt: "Diagnósticos" },
-              { icon: ActIcon.proposta,    n: propostasHoje,     txt: "Propostas enviadas" },
-            ].map((a, i) => (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
-                padding:"8px 0", borderBottom: i < 3 ? `1px solid ${C.border}` : "none" }}>
-                <span style={{ color: C.orange, flexShrink: 0 }}>{a.icon}</span>
-                <span style={{ fontFamily:"'Inter',sans-serif", fontWeight:600,
-                  fontSize:13, color:C.text, minWidth:28 }}>{a.n}</span>
-                <span style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2 }}>{a.txt}</span>
-              </div>
-            ))}
-            <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:12,
-              fontFamily:"'Inter',sans-serif", fontSize:12, color:C.orange, cursor:"pointer" }}
-              onClick={() => onNav("atividades")}>
-              Ver todas as atividades {Icon.arrow}
-            </div>
-          </div>
+        <div className="dashboard-secondary">
+          <section className="panel today-panel"><div className="panel-heading"><ClockCounterClockwise size={22}/><h2>Atividades de hoje</h2></div>
+            <div className="activity-summary">{[
+              {icon:ActIcon.leads, n:leadsHoje, txt:'Leads prospectados'},
+              {icon:ActIcon.contato, n:primContatoHoje, txt:'Primeiros contatos'},
+              {icon:ActIcon.diagnostico, n:diagnosticoHoje, txt:'Diagnósticos'},
+              {icon:ActIcon.proposta, n:propostasHoje, txt:'Propostas enviadas'},
+            ].map(item => <div className="activity-summary-row" key={item.txt}><span className="activity-icon">{item.icon}</span><span>{item.txt}</span><strong>{item.n}</strong></div>)}</div>
+            <button className="text-button" onClick={() => onNav('atividades')}>Ver todas as atividades <ArrowRight size={17}/></button>
+          </section>
+          <section className="panel goal-panel"><div className="panel-heading"><Target size={22}/><h2>Meta mensal</h2><button className="text-button" onClick={() => {setEditMeta(!editMeta);setMetaInput(String(meta));}}>{editMeta ? 'Cancelar' : 'Editar'}</button></div>
+            {editMeta ? <form className="goal-form" onSubmit={e => {e.preventDefault();saveMeta();}}><label htmlFor="monthly-goal">Leads por mês</label><div><input id="monthly-goal" type="number" min="1" value={metaInput} onChange={e => setMetaInput(e.target.value)}/><button className="button-primary">Salvar</button></div></form> : <div className="goal-value"><strong>{pct}%</strong><span>{leadsDoMes} de {meta} leads</span></div>}
+            <div className="goal-track" role="progressbar" aria-label="Meta mensal de leads" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}><span style={{width:`${pct}%`}}/></div>
+            <p className="goal-caption">{pct >= 100 ? 'Meta do mês atingida.' : `Faltam ${Math.max(0, meta-leadsDoMes)} leads para a meta.`}</p>
+          </section>
+          <section className="panel team-panel"><div className="panel-heading"><Users size={22}/><h2>Equipe comercial</h2><span>{COMERCIANTES.length} pessoas</span></div><div className="team-avatars">{COMERCIANTES.map(nome => <span key={nome} title={nome}><Avatar name={nome} size={36}/><small>{nome}</small></span>)}</div></section>
         </div>
       </div>
     </div>
@@ -895,7 +397,7 @@ function PageDashboard({ leads, totalLeads, comerciante, setComercian, onNav, us
 }
 
 // ── PROSPECÇÃO INLINE ─────────────────────────────────────────────────────────
-function ProspeccaoInline({ leads, comerciante, setComercian }) {
+function ProspeccaoInline({ comerciante, setComercian, onNav }) {
   const [cidade, setCidade]       = useState("");
   const [categoria, setCategoria] = useState("");
   const [limite, setLimite]       = useState(100);
@@ -904,57 +406,59 @@ function ProspeccaoInline({ leads, comerciante, setComercian }) {
 
   async function handleDisparo() {
     if (!cidade.trim()) { setStatus("err"); setStatusMsg("Preencha a localização."); return; }
+    if (!comerciante) { setStatus("err"); setStatusMsg("Selecione o responsável pela prospecção."); return; }
     setStatus("loading");
     try {
-      await fetch(WEBHOOK_URL, {
+      const response = await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cidade, categoria, limite, comerciante }),
       });
+      if (!response.ok) throw new Error("Falha na solicitação");
       setStatus("ok"); setStatusMsg("Prospecção iniciada com sucesso!");
     } catch {
-      setStatus("ok"); setStatusMsg("Prospecção iniciada — webhook confirmado.");
+      setStatus("err"); setStatusMsg("Não foi possível confirmar a prospecção. Tente novamente.");
     }
   }
 
   const inp = {
     background: C.bgInput, border: `1px solid ${C.border}`, borderRadius: 8,
-    color: C.text, fontFamily: "'Inter', sans-serif", fontSize: 13,
+    color: C.text, fontFamily: "'Manrope', sans-serif", fontSize: 13,
     padding: "10px 14px", outline: "none", width: "100%", boxSizing: "border-box",
     appearance: "none",
   };
 
   return (
-    <div style={{ background: C.bgCard, border: `1px solid ${C.border}`,
-      borderRadius: 12, padding: "22px 24px" }}>
+    <div className="panel" style={{ background: C.bgCard, border: `1px solid ${C.border}`,
+      borderRadius: 24, padding: "22px 24px" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-        <h2 style={{ fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:20, color:C.text }}>
-          Central de <span style={{ color:C.orange }}>Prospecção</span>
+        <h2 style={{ fontFamily:"'Manrope',sans-serif", fontWeight:700, fontSize:20, color:C.text }}>
+          Prospecção
         </h2>
-        <button style={{ display:"flex", alignItems:"center", gap:6, background:C.bgInput,
+        <button onClick={() => onNav("base")} style={{ display:"flex", alignItems:"center", gap:6, background:C.bgInput,
           border:`1px solid ${C.border}`, borderRadius:8, color:C.text2,
-          fontFamily:"'Inter',sans-serif", fontSize:12, padding:"7px 12px", cursor:"pointer" }}>
-          {Icon.history} Ver histórico
+          fontFamily:"'Manrope',sans-serif", fontSize:12, padding:"7px 12px", cursor:"pointer" }}>
+          {Icon.history} Ver base
         </button>
       </div>
 
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:18 }}>
         <div style={{ width:3, height:18, background:C.orange, borderRadius:99 }} />
-        <span style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text3 }}>
-          Configure os parâmetros da sua busca e capture novos leads qualificados.
+        <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text3 }}>
+          Defina a cidade, o segmento e o responsável pela busca.
         </span>
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
+      <div className="two-column" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 }}>
         <div>
           <label style={{ display:"flex", alignItems:"center", gap:6,
-            fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
+            fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
             {Icon.location} Localização
           </label>
           <div style={{ position:"relative" }}>
             <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)",
               color:C.text3, pointerEvents:"none" }}>{Icon.location}</span>
-            <input value={cidade} onChange={e=>setCidade(e.target.value)}
+            <input aria-label="Localização" value={cidade} onChange={e=>setCidade(e.target.value)}
               placeholder="Ex: Campinas, SP"
               style={{ ...inp, paddingLeft:32 }} />
           </div>
@@ -964,13 +468,13 @@ function ProspeccaoInline({ leads, comerciante, setComercian }) {
 
       <div style={{ marginBottom:14 }}>
         <label style={{ display:"flex", alignItems:"center", gap:6,
-          fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
+          fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
           {Icon.tag} Segmento de mercado
         </label>
         <div style={{ position:"relative" }}>
           <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)",
             color:C.text3, pointerEvents:"none" }}>{Icon.tag}</span>
-          <input value={categoria} onChange={e=>setCategoria(e.target.value)}
+          <input aria-label="Segmento de mercado" value={categoria} onChange={e=>setCategoria(e.target.value)}
             placeholder="Ex: Academias, Clínicas, Restaurantes…"
             style={{ ...inp, paddingLeft:32 }} />
         </div>
@@ -978,13 +482,13 @@ function ProspeccaoInline({ leads, comerciante, setComercian }) {
 
       <div style={{ marginBottom:18 }}>
         <label style={{ display:"flex", alignItems:"center", gap:6,
-          fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
+          fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
           {Icon.users} Quantidade de leads
         </label>
         <div style={{ position:"relative" }}>
           <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)",
             color:C.text3, pointerEvents:"none" }}>{Icon.users}</span>
-          <input type="number" value={limite} min={1} max={5000}
+          <input aria-label="Quantidade de leads" type="number" value={limite} min={1} max={5000}
             onChange={e=>setLimite(Number(e.target.value))}
             placeholder="Quantidade de leads"
             style={{ ...inp, paddingLeft:32 }} />
@@ -993,11 +497,13 @@ function ProspeccaoInline({ leads, comerciante, setComercian }) {
 
       <motion.button
         onClick={handleDisparo}
+        disabled={status === "loading"}
+        className="button-primary prospect-submit"
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.98 }}
         style={{
         width:"100%", background:C.orange, color:"#fff", border:"none",
-        borderRadius:10, fontFamily:"'Inter',sans-serif", fontWeight:700,
+        borderRadius:10, fontFamily:"'Manrope',sans-serif", fontWeight:700,
         fontSize:15, padding:"13px", cursor:"pointer",
         display:"flex", alignItems:"center", justifyContent:"center", gap:8,
         boxShadow:`0 4px 20px rgba(249,115,22,0.35)`,
@@ -1006,7 +512,7 @@ function ProspeccaoInline({ leads, comerciante, setComercian }) {
         {Icon.search}
         {status==="loading" ? "Iniciando…" : "Iniciar prospecção"}
       </motion.button>
-      <p style={{ textAlign:"center", fontFamily:"'Inter',sans-serif", fontSize:11,
+      <p style={{ textAlign:"center", fontFamily:"'Manrope',sans-serif", fontSize:11,
         color:C.text3, marginTop:8 }}>
         A prospecção será executada com base nos filtros selecionados.
       </p>
@@ -1017,10 +523,11 @@ function ProspeccaoInline({ leads, comerciante, setComercian }) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
+            role={status === "err" ? "alert" : "status"}
             style={{ marginTop:10, background: status==="err" ? "rgba(244,63,94,0.1)" : "rgba(34,197,94,0.1)",
             border:`1px solid ${status==="err" ? C.rose : C.green}`,
             borderRadius:8, padding:"10px 14px",
-            fontFamily:"'Inter',sans-serif", fontSize:12,
+            fontFamily:"'Manrope',sans-serif", fontSize:12,
             color: status==="err" ? C.rose : C.green }}>
             {statusMsg}
           </motion.div>
@@ -1045,58 +552,60 @@ function PageProspeccao({ leads, totalLeads, comerciante, setComercian }) {
 
   async function handleDisparo() {
     if (!cidade.trim()) { setStatus("err"); setStatusMsg("Preencha a localização."); return; }
+    if (!comerciante) { setStatus("err"); setStatusMsg("Selecione o responsável pela prospecção."); return; }
     setStatus("loading");
     try {
-      await fetch(WEBHOOK_URL, {
+      const response = await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cidade, categoria, limite, comerciante }),
       });
+      if (!response.ok) throw new Error("Falha na solicitação");
       setStatus("ok"); setStatusMsg("Prospecção iniciada com sucesso!");
     } catch {
-      setStatus("ok"); setStatusMsg("Prospecção iniciada — webhook confirmado.");
+      setStatus("err"); setStatusMsg("Não foi possível confirmar a prospecção. Tente novamente.");
     }
   }
 
   const inp = {
     background: C.bgInput, border: `1px solid ${C.border}`,
-    borderRadius: 8, color: C.text, fontFamily: "'Inter', sans-serif",
+    borderRadius: 8, color: C.text, fontFamily: "'Manrope', sans-serif",
     fontSize: 14, padding: "11px 14px", width: "100%",
     outline: "none", boxSizing: "border-box", appearance: "none",
   };
 
   return (
-    <div style={{ padding: "32px 28px" }}>
-      <h1 style={{ fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:28,
+    <div className="page-shell" style={{ padding: "32px 28px" }}>
+      <h1 style={{ fontFamily:"'Manrope',sans-serif", fontWeight:700, fontSize:28,
         color:C.text, marginBottom:4 }}>
-        Central de <span style={{ color:C.orange }}>Prospecção</span>
+        Prospecção
       </h1>
-      <p style={{ fontFamily:"'Inter',sans-serif", fontSize:13, color:C.text2, marginBottom:24 }}>
-        Configure os parâmetros da sua busca e capture novos leads qualificados.
+      <p style={{ fontFamily:"'Manrope',sans-serif", fontSize:13, color:C.text2, marginBottom:24 }}>
+        Defina a cidade, o segmento e o responsável pela busca.
       </p>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 340px", gap:20 }}>
-        <div style={{ background:C.bgCard, border:`1px solid ${C.border}`,
-          borderRadius:12, padding:"24px 26px" }}>
+      <div className="content-with-sidebar" style={{ display:"grid", gridTemplateColumns:"1fr 340px", gap:20 }}>
+        <div className="panel" style={{ background: C.bgCard, border:`1px solid ${C.border}`,
+          borderRadius: 24, padding:"24px 26px" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20 }}>
             <div style={{ width:3, height:20, background:C.orange, borderRadius:99 }} />
-            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:13, color:C.text3 }}>
-              Configure os parâmetros da sua busca e capture novos leads qualificados.
+            <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:13, color:C.text3 }}>
+              Defina a cidade, o segmento e o responsável pela busca.
             </span>
           </div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+          <div className="two-column" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
             <div>
               <label style={{ display:"flex", alignItems:"center", gap:6,
-                fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
+                fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
                 {Icon.location} Localização
               </label>
-              <select value={cidade} onChange={e=>setCidade(e.target.value)} style={inp}>
+              <select aria-label="Selecionar cidade" value={cidade} onChange={e=>setCidade(e.target.value)} style={inp}>
                 <option value="">Selecione a cidade…</option>
                 {[...new Set(leads.map(r=>r[COL.CIDADE]).filter(Boolean))].sort()
                   .map(c=><option key={c}>{c}</option>)}
               </select>
-              <input value={cidade} onChange={e=>setCidade(e.target.value)}
+              <input aria-label="Localização" value={cidade} onChange={e=>setCidade(e.target.value)}
                 placeholder="Ou digite: Ex. Campinas, SP"
                 style={{ ...inp, marginTop:6, fontSize:13 }} />
             </div>
@@ -1105,37 +614,32 @@ function PageProspeccao({ leads, totalLeads, comerciante, setComercian }) {
 
           <div style={{ marginBottom:16 }}>
             <label style={{ display:"flex", alignItems:"center", gap:6,
-              fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
+              fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
               {Icon.tag} Segmento de mercado
             </label>
-            <input value={categoria} onChange={e=>setCategoria(e.target.value)}
+            <input aria-label="Segmento de mercado" value={categoria} onChange={e=>setCategoria(e.target.value)}
               placeholder="Ex: Academias, Clínicas, Restaurantes…" style={inp} />
           </div>
 
-          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16,
-            padding:"12px 14px", background:C.bgInput, borderRadius:8,
-            border:`1px solid ${C.border}`, cursor:"pointer" }}>
-            {Icon.filter}
-            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:13, color:C.text3 }}>Outros filtros</span>
-            <span style={{ marginLeft:"auto", fontSize:18, color:C.text3 }}>+ Adicionar filtro</span>
-          </div>
 
           <div style={{ marginBottom:20 }}>
             <label style={{ display:"flex", alignItems:"center", gap:6,
-              fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
+              fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2, marginBottom:6 }}>
               {Icon.users} Quantidade de leads
             </label>
-            <input type="number" value={limite} min={1} max={5000}
+            <input aria-label="Quantidade de leads" type="number" value={limite} min={1} max={5000}
               onChange={e=>setLimite(Number(e.target.value))} style={inp} />
           </div>
 
           <motion.button
             onClick={handleDisparo}
+        disabled={status === "loading"}
+        className="button-primary prospect-submit"
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             style={{
             width:"100%", background:C.orange, color:"#fff", border:"none",
-            borderRadius:10, fontFamily:"'Inter',sans-serif", fontWeight:700,
+            borderRadius:10, fontFamily:"'Manrope',sans-serif", fontWeight:700,
             fontSize:15, padding:"14px", cursor:"pointer",
             display:"flex", alignItems:"center", justifyContent:"center", gap:8,
             boxShadow:`0 4px 20px rgba(249,115,22,0.35)`,
@@ -1144,7 +648,7 @@ function PageProspeccao({ leads, totalLeads, comerciante, setComercian }) {
             {Icon.search}
             {status==="loading" ? "Iniciando…" : "Iniciar prospecção"}
           </motion.button>
-          <p style={{ textAlign:"center", fontFamily:"'Inter',sans-serif", fontSize:11,
+          <p style={{ textAlign:"center", fontFamily:"'Manrope',sans-serif", fontSize:11,
             color:C.text3, marginTop:8 }}>
             A prospecção será executada com base nos filtros selecionados.
           </p>
@@ -1155,10 +659,11 @@ function PageProspeccao({ leads, totalLeads, comerciante, setComercian }) {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
+                role={status === "err" ? "alert" : "status"}
                 style={{ marginTop:12, background: status==="err" ? "rgba(244,63,94,0.1)" : "rgba(34,197,94,0.1)",
                 border:`1px solid ${status==="err" ? C.rose : C.green}`,
                 borderRadius:8, padding:"10px 14px",
-                fontFamily:"'Inter',sans-serif", fontSize:12,
+                fontFamily:"'Manrope',sans-serif", fontSize:12,
                 color: status==="err" ? C.rose : C.green }}>
                 {statusMsg}
               </motion.div>
@@ -1179,22 +684,22 @@ function PageProspeccao({ leads, totalLeads, comerciante, setComercian }) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: i * 0.05 }}
               style={{ background:C.bgCard, border:`1px solid ${C.border}`,
-              borderRadius:12, padding:"16px 20px", borderLeft:`3px solid ${k.color}` }}>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2, marginBottom:4 }}>{k.label}</div>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:28, color:C.text }}>
+              borderRadius: 24, padding:"16px 20px", borderLeft:`3px solid ${k.color}` }}>
+              <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2, marginBottom:4 }}>{k.label}</div>
+              <div style={{ fontFamily:"'Manrope',sans-serif", fontWeight:700, fontSize:28, color:C.text }}>
                 {k.value.toLocaleString("pt-BR")}
               </div>
             </motion.div>
           ))}
-          <div style={{ background:C.bgCard, border:`1px solid ${C.border}`,
-            borderRadius:12, padding:"16px 20px" }}>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2, marginBottom:8 }}>Top segmentos</div>
+          <div className="panel" style={{ background: C.bgCard, border:`1px solid ${C.border}`,
+            borderRadius: 24, padding:"16px 20px" }}>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2, marginBottom:8 }}>Top segmentos</div>
             {valueCounts(leads, COL.CATEGORIA, 3).map((c,i)=>(
               <div key={i} style={{ display:"flex", justifyContent:"space-between",
                 alignItems:"center", padding:"5px 0",
                 borderBottom: i<2 ? `1px solid ${C.border}` : "none" }}>
-                <span style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2 }}>{c.name}</span>
-                <span style={{ fontFamily:"'Inter',sans-serif", fontSize:12, fontWeight:600, color:C.orange }}>{c.value}</span>
+                <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2 }}>{c.name}</span>
+                <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:600, color:C.orange }}>{c.value}</span>
               </div>
             ))}
           </div>
@@ -1205,8 +710,8 @@ function PageProspeccao({ leads, totalLeads, comerciante, setComercian }) {
 }
 
 // ═══════════════════════════ BASE DE LEADS ═══════════════════════════════════
-function PageBase({ leads }) {
-  const [busca, setBusca] = useState("");
+function PageBase({ leads, initialSearch = "" }) {
+  const [busca, setBusca] = useState(initialSearch);
 
   const filtered = useMemo(() => {
     if (!busca.trim()) return leads;
@@ -1240,45 +745,45 @@ function PageBase({ leads }) {
     const rows = leads.map(r => allCols.map(c=>`"${(r[c]||"").replace(/"/g,'""')}"`).join(","));
     const blob = new Blob([[header,...rows].join("\n")],{type:"text/csv"});
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = "leads.csv"; a.click();
+    a.download = "leads.csv"; a.click(); URL.revokeObjectURL(a.href);
   }
 
   return (
-    <div style={{ padding:"32px 28px" }}>
+    <div className="page-shell" style={{ padding:"32px 28px" }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:24 }}>
         <div>
-          <h1 style={{ fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:28, color:C.text, marginBottom:4 }}>
+          <h1 style={{ fontFamily:"'Manrope',sans-serif", fontWeight:700, fontSize:28, color:C.text, marginBottom:4 }}>
             Base de <span style={{color:C.orange}}>Leads</span>
           </h1>
-          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:13, color:C.text2 }}>
+          <p style={{ fontFamily:"'Manrope',sans-serif", fontSize:13, color:C.text2 }}>
             {leads.length.toLocaleString("pt-BR")} registros na base
           </p>
         </div>
         <button onClick={downloadCSV} style={{
           background:"transparent", border:`1px solid ${C.border}`, borderRadius:8,
-          color:C.text2, fontFamily:"'Inter',sans-serif", fontSize:13,
+          color:C.text2, fontFamily:"'Manrope',sans-serif", fontSize:13,
           padding:"9px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:6,
-        }}>↓ Exportar CSV</button>
+        }}><DownloadSimple size={18}/> Exportar CSV</button>
       </div>
 
       <div style={{ position:"relative", marginBottom:16 }}>
         <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:C.text3 }}>
           {Icon.search}
         </span>
-        <input value={busca} onChange={e=>setBusca(e.target.value)}
+        <input aria-label="Pesquisar leads" value={busca} onChange={e=>setBusca(e.target.value)}
           placeholder="Pesquisar empresa, telefone, cidade…"
           style={{ background:C.bgInput, border:`1px solid ${C.border}`, borderRadius:8,
-            color:C.text, fontFamily:"'Inter',sans-serif", fontSize:14,
+            color:C.text, fontFamily:"'Manrope',sans-serif", fontSize:14,
             padding:"10px 14px 10px 38px", outline:"none", width:"100%", boxSizing:"border-box" }} />
       </div>
 
-      <div style={{ overflowX:"auto", border:`1px solid ${C.border}`, borderRadius:12, maxHeight:520 }}>
+      <div className="lead-table-wrapper" style={{ overflowX:"auto", border:`1px solid ${C.border}`, borderRadius: 24, maxHeight:520 }}>
         <table style={{ width:"100%", borderCollapse:"collapse", minWidth:900 }}>
           <thead>
             <tr style={{ background:C.bgCard }}>
               {cols.map(c=>(
                 <th key={c} style={{ padding:"12px 16px", textAlign:"left",
-                  fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:600,
+                  fontFamily:"'Manrope',sans-serif", fontSize:11, fontWeight:600,
                   color:C.text2, borderBottom:`1px solid ${C.border}`,
                   whiteSpace:"nowrap", letterSpacing:"0.5px" }}>{c}</th>
               ))}
@@ -1290,10 +795,10 @@ function PageBase({ leads }) {
                 borderBottom:`1px solid ${C.border}` }}>
                 {cols.map(c=>(
                   <td key={c} style={{ padding:"10px 16px",
-                    fontFamily:"'Inter',sans-serif", fontSize:12,
+                    fontFamily:"'Manrope',sans-serif", fontSize:12,
                     color: cellColor(c, r[c]),
                     maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                    {r[c] || "—"}
+                    {r[c] || "-"}
                   </td>
                 ))}
               </tr>
@@ -1301,12 +806,14 @@ function PageBase({ leads }) {
           </tbody>
         </table>
       </div>
+      <p className="table-count" role="status">{filtered.length.toLocaleString('pt-BR')} {filtered.length === 1 ? 'registro encontrado' : 'registros encontrados'}</p>
+      {!filtered.length && <div className="empty-state"><MagnifyingGlass size={28}/><strong>{busca ? 'Nenhum lead encontrado' : 'Sua base está vazia'}</strong><p>{busca ? 'Tente buscar por outro nome, cidade ou telefone.' : 'Os leads aparecerão aqui após a sincronização.'}</p></div>}
     </div>
   );
 }
 
 // ═══════════════════════════ ANALYTICS ═══════════════════════════════════════
-function PageAnalytics({ leads, totalLeads }) {
+function PageAnalytics({ leads }) {
   const botChamou    = hasBot(leads);
   const primContato  = hasSim(leads, COL.PRIMEIRO_CONTATO);
   const diagnostico  = hasSim(leads, COL.DIAGNOSTICO);
@@ -1334,7 +841,7 @@ function PageAnalytics({ leads, totalLeads }) {
   const topServicos = valueCounts(leads, COL.SERVICO, 6);
   const topCom      = valueCounts(leads, COL.COMERCIANTE, 10);
   const botStatus   = valueCounts(leads, COL.BOT);
-  const motivos     = valueCounts(leads, COL.MOTIVO, 5).filter(m => m.name && m.name !== "—");
+  const motivos     = valueCounts(leads, COL.MOTIVO, 5).filter(m => m.name && m.name !== "-");
 
   function botColor(name) {
     const n = (name || "").toLowerCase();
@@ -1344,17 +851,17 @@ function PageAnalytics({ leads, totalLeads }) {
   }
 
   return (
-    <div style={{ padding:"32px 28px" }}>
-      <h1 style={{ fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:28,
+    <div className="page-shell" style={{ padding:"32px 28px" }}>
+      <h1 style={{ fontFamily:"'Manrope',sans-serif", fontWeight:700, fontSize:28,
         color:C.text, marginBottom:4 }}>
         <span style={{ color:C.orange }}>Analytics</span>
       </h1>
-      <p style={{ fontFamily:"'Inter',sans-serif", fontSize:13, color:C.text2, marginBottom:24 }}>
+      <p style={{ fontFamily:"'Manrope',sans-serif", fontSize:13, color:C.text2, marginBottom:24 }}>
         Visão consolidada da operação comercial.
       </p>
 
       {/* KPIs */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14, marginBottom:20 }}>
+      <div className="metric-strip" style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14, marginBottom:20 }}>
         {[
           { label:"Bot chamou",  value: botChamou,   color: C.orange },
           { label:"1º Contato",  value: primContato, color: C.amber,   sub:`${taxa}% taxa` },
@@ -1368,35 +875,35 @@ function PageAnalytics({ leads, totalLeads }) {
             transition={{ duration: 0.35, delay: i * 0.06, ease: "easeOut" }}
             whileHover={{ y: -3 }}
             style={{ background:C.bgCard, border:`1px solid ${C.border}`,
-            borderRadius:12, padding:"18px 20px", borderTop:`3px solid ${k.color}` }}>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:11, color:C.text3,
+            borderRadius: 24, padding:"18px 20px", borderTop:`3px solid ${k.color}` }}>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:11, color:C.text3,
               textTransform:"uppercase", letterSpacing:".6px", marginBottom:8 }}>{k.label}</div>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:30,
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontWeight:700, fontSize:30,
               color:C.text, lineHeight:1 }}>{k.value}</div>
-            {k.sub && <div style={{ fontFamily:"'Inter',sans-serif", fontSize:11,
+            {k.sub && <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:11,
               color:C.green, marginTop:6 }}>{k.sub}</div>}
           </motion.div>
         ))}
       </div>
 
-      {/* FUNIL — hero */}
-      <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:12,
+      {/* FUNIL - hero */}
+      <div className="funnel-panel" style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius: 24,
         padding:"22px 24px", marginBottom:20 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start",
           marginBottom:6, flexWrap:"wrap", gap:12 }}>
           <div>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:15, color:C.text }}>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontWeight:600, fontSize:15, color:C.text }}>
               Funil de Conversão
             </div>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text3, marginTop:2 }}>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text3, marginTop:2 }}>
               Taxa global (bot → contrato): <span style={{ color:C.green, fontWeight:600 }}>{taxaGlobal}%</span>
             </div>
           </div>
           {pipeline > 0 && (
             <div style={{ background:"rgba(34,197,94,0.1)", border:`1px solid ${C.green}`,
               borderRadius:8, padding:"8px 14px", textAlign:"right" }}>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:10, color:C.text2 }}>Pipeline total</div>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:16, color:C.green }}>
+              <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:10, color:C.text2 }}>Pipeline total</div>
+              <div style={{ fontFamily:"'Manrope',sans-serif", fontWeight:700, fontSize:16, color:C.green }}>
                 R$ {pipeline.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2})}
               </div>
             </div>
@@ -1407,34 +914,34 @@ function PageAnalytics({ leads, totalLeads }) {
             <XAxis type="number" hide />
             <YAxis type="category" dataKey="name" width={140}
               tick={{ fontSize:12, fill:C.text2 }} tickLine={false} axisLine={false} />
-            <Tooltip content={<ChartTooltip />} cursor={{ fill:"rgba(255,255,255,0.03)" }} />
+            <Tooltip content={<ChartTooltip />} cursor={{ fill:C.bgHover }} />
             <Bar dataKey="value" name="Leads" radius={[0,8,8,0]} barSize={28} animationDuration={750}>
               {funnelData.map((d,i) => <Cell key={i} fill={d.fill} />)}
               <LabelList dataKey="label" position="right"
-                style={{ fill:C.text, fontSize:12, fontWeight:600, fontFamily:"'Inter',sans-serif" }} />
+                style={{ fill:C.text, fontSize:12, fontWeight:600, fontFamily:"'Manrope',sans-serif" }} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       {/* GEO + CATEGORIA */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
-        <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:12, padding:"20px 22px" }}>
-          <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:14,
+      <div className="two-column" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+        <div className="panel" style={{ background: C.bgCard, border:`1px solid ${C.border}`, borderRadius: 24, padding:"20px 22px" }}>
+          <div style={{ fontFamily:"'Manrope',sans-serif", fontWeight:600, fontSize:14,
             color:C.text, marginBottom:16 }}>Top Localidades</div>
           <RankedBarChart data={topCidades} colorHex={C.orange} height={280} />
         </div>
-        <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:12, padding:"20px 22px" }}>
-          <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:14,
+        <div className="panel" style={{ background: C.bgCard, border:`1px solid ${C.border}`, borderRadius: 24, padding:"20px 22px" }}>
+          <div style={{ fontFamily:"'Manrope',sans-serif", fontWeight:600, fontSize:14,
             color:C.text, marginBottom:16 }}>Top Categorias</div>
           <RankedBarChart data={topNichos} colorHex={C.cyan} height={280} />
         </div>
       </div>
 
       {/* BOT + EQUIPE */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
-        <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:12, padding:"20px 22px" }}>
-          <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:14,
+      <div className="two-column" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+        <div className="panel" style={{ background: C.bgCard, border:`1px solid ${C.border}`, borderRadius: 24, padding:"20px 22px" }}>
+          <div style={{ fontFamily:"'Manrope',sans-serif", fontWeight:600, fontSize:14,
             color:C.text, marginBottom:16 }}>Status do Bot</div>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
@@ -1449,7 +956,7 @@ function PageAnalytics({ leads, totalLeads }) {
             {botStatus.map((s,i)=>(
               <div key={i} style={{ display:"flex", alignItems:"center", gap:5 }}>
                 <div style={{ width:8, height:8, borderRadius:"50%", background:botColor(s.name) }} />
-                <span style={{ fontFamily:"'Inter',sans-serif", fontSize:11, color:C.text2 }}>
+                <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:11, color:C.text2 }}>
                   {s.name} ({s.value})
                 </span>
               </div>
@@ -1457,18 +964,18 @@ function PageAnalytics({ leads, totalLeads }) {
           </div>
         </div>
 
-        <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:12, padding:"20px 22px" }}>
-          <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:14,
+        <div className="panel" style={{ background: C.bgCard, border:`1px solid ${C.border}`, borderRadius: 24, padding:"20px 22px" }}>
+          <div style={{ fontFamily:"'Manrope',sans-serif", fontWeight:600, fontSize:14,
             color:C.text, marginBottom:16 }}>Performance por Comerciante</div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={topCom} margin={{ top:16, right:0, bottom:0, left:0 }}>
               <XAxis dataKey="name" tick={{ fontSize:11, fill:C.text2 }} tickLine={false} axisLine={false} />
               <YAxis hide />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill:"rgba(255,255,255,0.03)" }} />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill:C.bgHover }} />
               <Bar dataKey="value" name="Leads" radius={[6,6,0,0]} barSize={36} animationDuration={700}>
                 {topCom.map((d,i)=><Cell key={i} fill={COM_COLORS[d.name] || C.text3} />)}
                 <LabelList dataKey="value" position="top"
-                  style={{ fill:C.text2, fontSize:11, fontFamily:"'Inter',sans-serif" }} />
+                  style={{ fill:C.text2, fontSize:11, fontFamily:"'Manrope',sans-serif" }} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -1476,18 +983,18 @@ function PageAnalytics({ leads, totalLeads }) {
       </div>
 
       {/* SERVIÇOS + MOTIVOS */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+      <div className="two-column" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
         {topServicos.length > 0 && (
-          <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:12, padding:"20px 22px" }}>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:14,
+          <div className="panel" style={{ background: C.bgCard, border:`1px solid ${C.border}`, borderRadius: 24, padding:"20px 22px" }}>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontWeight:600, fontSize:14,
               color:C.text, marginBottom:16 }}>Serviços ofertados</div>
             {topServicos.map((s,i)=>(
               <div key={i} style={{ marginBottom:12 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                  <span style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2 }}>{s.name}</span>
-                  <span style={{ fontFamily:"'Inter',sans-serif", fontSize:12, fontWeight:600, color:C.orange }}>{s.value}</span>
+                  <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2 }}>{s.name}</span>
+                  <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:600, color:C.orange }}>{s.value}</span>
                 </div>
-                <div style={{ height:5, borderRadius:99, background:"rgba(255,255,255,0.06)" }}>
+                <div style={{ height:5, borderRadius:99, background:C.bgHover }}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${(s.value / (topServicos[0]?.value || 1)) * 100}%` }}
@@ -1500,16 +1007,16 @@ function PageAnalytics({ leads, totalLeads }) {
         )}
 
         {motivos.length > 0 && (
-          <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:12, padding:"20px 22px" }}>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:14,
+          <div className="panel" style={{ background: C.bgCard, border:`1px solid ${C.border}`, borderRadius: 24, padding:"20px 22px" }}>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontWeight:600, fontSize:14,
               color:C.text, marginBottom:16 }}>Principais motivos de perda</div>
             {motivos.map((m,i)=>(
               <div key={i} style={{ marginBottom:12 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                  <span style={{ fontFamily:"'Inter',sans-serif", fontSize:12, color:C.text2 }}>{m.name}</span>
-                  <span style={{ fontFamily:"'Inter',sans-serif", fontSize:12, fontWeight:600, color:C.rose }}>{m.value}×</span>
+                  <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:12, color:C.text2 }}>{m.name}</span>
+                  <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:12, fontWeight:600, color:C.rose }}>{m.value}×</span>
                 </div>
-                <div style={{ height:5, borderRadius:99, background:"rgba(255,255,255,0.06)" }}>
+                <div style={{ height:5, borderRadius:99, background:C.bgHover }}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${(m.value / (motivos[0]?.value || 1)) * 100}%` }}
@@ -1526,7 +1033,7 @@ function PageAnalytics({ leads, totalLeads }) {
 }
 
 // ═══════════════════════════ ATIVIDADES ══════════════════════════════════════
-function PageAtividades({ leads, comerciante }) {
+function PageAtividades({ leads }) {
   const hoje = todayBR();
 
   const leadsHoje     = leads.filter(r => r[COL.DATA] === hoje);
@@ -1579,33 +1086,33 @@ function PageAtividades({ leads, comerciante }) {
   const extras   = leadsHoje.length - VISIBLE_COUNT;
 
   return (
-    <div style={{ padding: "32px 28px" }}>
+    <div className="page-shell" style={{ padding: "32px 28px" }}>
 
       {/* HEADER */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: 28, color: C.text, marginBottom: 4 }}>
+          <h1 style={{ fontFamily: "'Manrope',sans-serif", fontWeight: 700, fontSize: 28, color: C.text, marginBottom: 4 }}>
             Atividades de <span style={{ color: C.orange }}>hoje</span>
           </h1>
-          <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.text2 }}>
+          <p style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13, color: C.text2 }}>
             {hoje_fmt} · {totalHoje} registro{totalHoje !== 1 ? "s" : ""} no dia
           </p>
         </div>
         <div style={{ background: C.bgInput, border: `1px solid ${C.border}`, borderRadius: 8,
-          padding: "8px 14px", fontSize: 12, color: C.text2, fontFamily: "'Inter',sans-serif",
+          padding: "8px 14px", fontSize: 12, color: C.text2, fontFamily: "'Manrope',sans-serif",
           display: "flex", alignItems: "center", gap: 6 }}>
           {Icon.reunioes} Hoje
         </div>
       </div>
 
       {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14, marginBottom: 24 }}>
+      <div className="metric-strip" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14, marginBottom: 24 }}>
         {[
           { label: "Leads hoje",    value: totalHoje,     color: C.orange,  sub: deltaHoje !== 0 ? `${deltaHoje > 0 ? "↑" : "↓"} ${Math.abs(deltaHoje)} vs ontem` : "= igual ontem", subColor: deltaHoje >= 0 ? C.green : C.rose },
-          { label: "1º Contato",   value: contatosHoje,  color: C.cyan,    sub: totalHoje > 0 ? `${Math.round((contatosHoje / totalHoje) * 100)}% dos leads` : "—", subColor: C.text3 },
-          { label: "Diagnósticos", value: diagHoje,      color: C.amber,   sub: contatosHoje > 0 ? `${Math.round((diagHoje / contatosHoje) * 100)}% dos contatos` : "—", subColor: C.text3 },
+          { label: "1º Contato",   value: contatosHoje,  color: C.cyan,    sub: totalHoje > 0 ? `${Math.round((contatosHoje / totalHoje) * 100)}% dos leads` : "-", subColor: C.text3 },
+          { label: "Diagnósticos", value: diagHoje,      color: C.amber,   sub: contatosHoje > 0 ? `${Math.round((diagHoje / contatosHoje) * 100)}% dos contatos` : "-", subColor: C.text3 },
           { label: "Propostas",    value: propostasHoje, color: "#8B5CF6", sub: "enviadas hoje", subColor: C.text3 },
-          { label: "Contratos",    value: contratosHoje, color: C.green,   sub: contratosHoje > 0 ? "Fechado!" : "—", subColor: C.green },
+          { label: "Contratos",    value: contratosHoje, color: C.green,   sub: contratosHoje > 0 ? "Fechado!" : "-", subColor: C.green },
         ].map((k, i) => (
           <motion.div key={i}
             initial={{ opacity: 0, y: 14 }}
@@ -1613,30 +1120,30 @@ function PageAtividades({ leads, comerciante }) {
             transition={{ duration: 0.35, delay: i * 0.06, ease: "easeOut" }}
             whileHover={{ y: -3 }}
             style={{ background: C.bgCard, border: `1px solid ${C.border}`,
-            borderRadius: 12, padding: "18px 20px", borderTop: `3px solid ${k.color}` }}>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: C.text3,
+            borderRadius: 24, padding: "18px 20px", borderTop: `3px solid ${k.color}` }}>
+            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11, color: C.text3,
               textTransform: "uppercase", letterSpacing: ".8px", marginBottom: 8 }}>{k.label}</div>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: 32,
+            <div style={{ fontFamily: "'Manrope',sans-serif", fontWeight: 700, fontSize: 32,
               color: C.text, lineHeight: 1 }}>{k.value}</div>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: k.subColor, marginTop: 6 }}>{k.sub}</div>
+            <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11, color: k.subColor, marginTop: 6 }}>{k.sub}</div>
           </motion.div>
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20 }}>
+      <div className="content-with-sidebar" style={{ display:"grid", gridTemplateColumns:"1fr 340px", gap: 20 }}>
 
         {/* TIMELINE */}
-        <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 12, padding: "22px 24px" }}>
-          <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 15,
+        <div className="panel" style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 24, padding: "22px 24px" }}>
+          <div style={{ fontFamily: "'Manrope',sans-serif", fontWeight: 600, fontSize: 15,
             color: C.text, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
             {Icon.atividades}
             <span style={{ color: C.orange }}>Linha do tempo</span>
-            <span style={{ color: C.text2 }}>— leads de hoje</span>
+            <span style={{ color: C.text2 }}>- leads de hoje</span>
           </div>
 
           {leadsHoje.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px 0", color: C.text3,
-              fontFamily: "'Inter',sans-serif", fontSize: 13 }}>
+              fontFamily: "'Manrope',sans-serif", fontSize: 13 }}>
               Nenhum lead registrado hoje ainda.
             </div>
           ) : (
@@ -1668,24 +1175,24 @@ function PageAtividades({ leads, comerciante }) {
                       <div style={{ display: "flex", justifyContent: "space-between",
                         alignItems: "flex-start", marginBottom: 6 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600,
+                          <span style={{ fontFamily: "'Manrope',sans-serif", fontWeight: 600,
                             fontSize: 13, color: C.text }}>
-                            {r[COL.EMPRESA] || "—"}
+                            {r[COL.EMPRESA] || "-"}
                           </span>
                           <span style={{ background: badge.bg, color: badge.color,
                             border: `1px solid ${badge.border}`, fontSize: 10, fontWeight: 600,
-                            padding: "2px 8px", borderRadius: 20, fontFamily: "'Inter',sans-serif" }}>
+                            padding: "2px 8px", borderRadius: 20, fontFamily: "'Manrope',sans-serif" }}>
                             {badge.label}
                           </span>
                         </div>
-                        <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11,
+                        <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11,
                           color: C.text3, flexShrink: 0, marginLeft: 8 }}>
-                          {r[COL.DATA] || "—"}
+                          {r[COL.DATA] || "-"}
                         </span>
                       </div>
 
                       <div style={{ display: "flex", gap: 14, flexWrap: "wrap",
-                        fontFamily: "'Inter',sans-serif", fontSize: 12, color: C.text2 }}>
+                        fontFamily: "'Manrope',sans-serif", fontSize: 12, color: C.text2 }}>
                         {r[COL.CIDADE] && (
                           <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                             {Icon.location} {r[COL.CIDADE]}
@@ -1715,7 +1222,7 @@ function PageAtividades({ leads, comerciante }) {
                       {r[COL.MOTIVO] && (
                         <div style={{ marginTop: 6, background: "rgba(244,63,94,0.07)",
                           border: "1px solid rgba(244,63,94,0.2)", borderRadius: 6,
-                          padding: "4px 10px", fontFamily: "'Inter',sans-serif",
+                          padding: "4px 10px", fontFamily: "'Manrope',sans-serif",
                           fontSize: 11, color: C.rose }}>
                           ✗ {r[COL.MOTIVO]}
                         </div>
@@ -1733,14 +1240,14 @@ function PageAtividades({ leads, comerciante }) {
                   </div>
                   <motion.button
                     onClick={() => setShowAll(true)}
-                    whileHover={{ backgroundColor: "rgba(255,255,255,0.06)" }}
+                    whileHover={{ backgroundColor: C.bgHover }}
                     style={{
-                    flex: 1, background: "rgba(255,255,255,0.03)",
+                    flex: 1, background: C.bgHover,
                     border: `1px dashed ${C.border}`, borderRadius: 8,
                     padding: "8px 12px", color: C.text3, cursor: "pointer",
-                    fontFamily: "'Inter',sans-serif", fontSize: 12, textAlign: "left",
+                    fontFamily: "'Manrope',sans-serif", fontSize: 12, textAlign: "left",
                   }}>
-                    + {extras} outro{extras !== 1 ? "s" : ""} lead{extras !== 1 ? "s" : ""} — clique para ver todos
+                    + {extras} outro{extras !== 1 ? "s" : ""} lead{extras !== 1 ? "s" : ""} - clique para ver todos
                   </motion.button>
                 </div>
               )}
@@ -1752,8 +1259,8 @@ function PageAtividades({ leads, comerciante }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
           {/* Equipe hoje */}
-          <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 12, padding: "18px 20px" }}>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13,
+          <div className="panel" style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 24, padding: "18px 20px" }}>
+            <div style={{ fontFamily: "'Manrope',sans-serif", fontWeight: 600, fontSize: 13,
               color: C.text, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
               {Icon.users} Equipe hoje
             </div>
@@ -1769,9 +1276,9 @@ function PageAtividades({ leads, comerciante }) {
                       {initials(p.name)}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12,
+                      <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12,
                         color: C.text, fontWeight: 500, marginBottom: 3 }}>{p.name}</div>
-                      <div style={{ height: 4, borderRadius: 99, background: "rgba(255,255,255,0.07)" }}>
+                      <div style={{ height: 4, borderRadius: 99, background: C.bgHover }}>
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
@@ -1779,7 +1286,7 @@ function PageAtividades({ leads, comerciante }) {
                           style={{ height: "100%", borderRadius: 99, background: cor }} />
                       </div>
                     </div>
-                    <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12,
+                    <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12,
                       fontWeight: 600, color: cor, minWidth: 18, textAlign: "right" }}>
                       {p.count}
                     </span>
@@ -1790,8 +1297,8 @@ function PageAtividades({ leads, comerciante }) {
           </div>
 
           {/* Funil do dia */}
-          <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 12, padding: "18px 20px" }}>
-            <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13,
+          <div className="panel" style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 24, padding: "18px 20px" }}>
+            <div style={{ fontFamily: "'Manrope',sans-serif", fontWeight: 600, fontSize: 13,
               color: C.text, marginBottom: 14 }}>Funil do dia</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {[
@@ -1802,16 +1309,16 @@ function PageAtividades({ leads, comerciante }) {
                 { label: "Contrato",    value: contratosHoje, color: C.green },
               ].map((f, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11,
+                  <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11,
                     color: C.text2, width: 90, flexShrink: 0 }}>{f.label}</span>
-                  <div style={{ flex: 1, height: 6, borderRadius: 99, background: "rgba(255,255,255,0.06)" }}>
+                  <div style={{ flex: 1, height: 6, borderRadius: 99, background: C.bgHover }}>
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: totalHoje > 0 ? `${Math.round((f.value / totalHoje) * 100)}%` : "0%" }}
                       transition={{ duration: 0.6, delay: i * 0.05, ease: "easeOut" }}
                       style={{ height: "100%", borderRadius: 99, background: f.color }} />
                   </div>
-                  <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11,
+                  <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 11,
                     fontWeight: 600, color: f.color, minWidth: 20, textAlign: "right" }}>
                     {f.value}
                   </span>
@@ -1822,16 +1329,16 @@ function PageAtividades({ leads, comerciante }) {
 
           {/* Top categorias */}
           {topCatHoje.length > 0 && (
-            <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 12, padding: "18px 20px" }}>
-              <div style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 13,
+            <div className="panel" style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 24, padding: "18px 20px" }}>
+              <div style={{ fontFamily: "'Manrope',sans-serif", fontWeight: 600, fontSize: 13,
                 color: C.text, marginBottom: 12 }}>Top categorias hoje</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                 {topCatHoje.map((c, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between",
                     padding: "7px 0",
                     borderBottom: i < topCatHoje.length - 1 ? `1px solid ${C.border}` : "none" }}>
-                    <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: C.text2 }}>{c.name}</span>
-                    <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 12,
+                    <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: C.text2 }}>{c.name}</span>
+                    <span style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12,
                       fontWeight: 600, color: C.orange }}>{c.value}</span>
                   </div>
                 ))}
@@ -1841,12 +1348,12 @@ function PageAtividades({ leads, comerciante }) {
 
           {/* Estado vazio */}
           {leadsHoje.length === 0 && (
-            <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 12,
+            <div className="panel" style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 24,
               padding: "24px 20px", textAlign: "center" }}>
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.text3, marginBottom: 8 }}>
+              <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 13, color: C.text3, marginBottom: 8 }}>
                 Nenhuma atividade hoje ainda
               </div>
-              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: C.text3 }}>
+              <div style={{ fontFamily: "'Manrope',sans-serif", fontSize: 12, color: C.text3 }}>
                 Inicie uma prospecção para começar o dia!
               </div>
             </div>
@@ -1857,32 +1364,22 @@ function PageAtividades({ leads, comerciante }) {
   );
 }
 
-// ═══════════════════════════ PLACEHOLDER PAGES ════════════════════════════════
-function PagePlaceholder({ title, icon }) {
-  return (
-    <div style={{ padding:"32px 28px", display:"flex", flexDirection:"column",
-      alignItems:"center", justifyContent:"center", minHeight:400 }}>
-      <div style={{ fontSize:48, marginBottom:16, opacity:0.3 }}>{icon}</div>
-      <div style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:18, color:C.text3, marginBottom:8 }}>{title}</div>
-      <div style={{ fontFamily:"'Inter',sans-serif", fontSize:13, color:C.text3 }}>Em breve disponível</div>
-    </div>
-  );
-}
-
 // ═══════════════════════════ APP ROOT ════════════════════════════════════════
 export default function App() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [globalSearch, setGlobalSearch] = useState("");
   const [allLeads, setAllLeads]     = useState([]);
   const [loading, setLoading]       = useState(true);
   const [lastSync, setLastSync]     = useState(null);
   const [syncError, setSyncError] = useState(null);
   const [active, setActive]         = useState("dashboard");
-  const [comerciante, setComercian] = useState("Amanda");
+  const [comerciante, setComercian] = useState(() => { const name = sessionStorage.getItem("jarvis_usuario"); return COMERCIANTES.includes(name) ? name : ""; });
   const [usuario, setUsuario] = useState(() => sessionStorage.getItem("jarvis_usuario") || "");
 
   function selectUser(nome) {
     setUsuario(nome);
     sessionStorage.setItem("jarvis_usuario", nome);
-    if (nome !== "Diretor") setComercian(nome);
+    setComercian(nome !== "Diretor" ? nome : "");
     setActive("dashboard");
   }
 
@@ -1892,7 +1389,6 @@ export default function App() {
   }
 
   const fetchLeads = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await fetch(
         "/api/leads",
@@ -1921,6 +1417,8 @@ export default function App() {
     }
   }, []);
 
+  // Initial synchronization with the external sheet; subsequent refreshes are user actions.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
   const leads      = allLeads;
@@ -1930,126 +1428,20 @@ export default function App() {
     switch(active) {
       case "dashboard":  return <PageDashboard leads={leads} totalLeads={totalLeads} comerciante={comerciante} setComercian={setComercian} onNav={setActive} usuario={usuario} />;
       case "prospeccao": return <PageProspeccao leads={leads} totalLeads={totalLeads} comerciante={comerciante} setComercian={setComercian} />;
-      case "base":       return <PageBase leads={leads} />;
+      case "base":       return <PageBase key={globalSearch} leads={leads} initialSearch={globalSearch} />;
+      case "settings": return <PageSettings theme={theme} setTheme={setTheme} resolvedTheme={resolvedTheme} usuario={usuario} onChangeUser={changeUser}/>;
       case "analytics":  return <PageAnalytics leads={leads} totalLeads={totalLeads} />;
       case "crm":        return <PageCRM leads={leads} />;
       case "atividades": return <PageAtividades leads={leads} comerciante={comerciante} />;
-      case "config":     return <PagePlaceholder title="Configurações" icon="⚙️" />;
       default:           return <PageDashboard leads={leads} totalLeads={totalLeads} comerciante={comerciante} setComercian={setComercian} onNav={setActive} usuario={usuario} />;
     }
   }
 
-  if (!usuario) return <ProfileGate onSelect={selectUser} />;
-
-  return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body * { font-family: 'Manrope', system-ui, sans-serif !important; }
-        html { scroll-behavior: smooth; }
-        html, body, #root { width: 100%; min-height: 100%; overflow-x: hidden; }
-        body { background: ${C.bg}; font-family: 'Manrope', system-ui, sans-serif; }
-        button, input, select, textarea { font: inherit; }
-        button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
-          outline: 2px solid ${C.orange}; outline-offset: 3px;
-        }
-        .app-shell { min-height: 100dvh; }
-        .page-shell { width: 100%; max-width: 1480px; margin: 0 auto; }
-        .page-heading h1 { letter-spacing: -1.2px; line-height: 1.08; }
-        .kpi-card { position: relative; overflow: hidden; min-height: 168px; transition: border-color .2s ease, background .2s ease, transform .2s ease; }
-        .kpi-card::after { content: ''; position: absolute; inset: 0 0 auto; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent); }
-        .kpi-card:hover { border-color: ${C.border2} !important; background: #181A1D !important; }
-        .nav-button { position: relative; }
-        .nav-button[aria-current='page']::before { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 2px; border-radius: 2px; background: ${C.orange}; }
-        .profile-switcher { transition: background .2s ease, border-color .2s ease; }
-        .profile-switcher:hover { border-color: ${C.orangeBorder} !important; background: ${C.bgHover} !important; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: ${C.bgNav}; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 99px; }
-        ::-webkit-scrollbar-thumb:hover { background: ${C.orange}; }
-        select option { background: ${C.bgInput}; color: ${C.text}; }
-        input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
-        @media (max-width: 1120px) {
-          .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-          .dashboard-layout { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width: 760px) {
-          .app-shell { display: block !important; overflow: visible !important; }
-          .app-sidebar { position: sticky !important; width: 100% !important; min-width: 0 !important; height: auto !important; bottom: auto !important; padding: 0 !important; overflow: visible !important; }
-          .app-sidebar > div:first-child { display: none !important; }
-          .app-nav { display: flex; gap: 5px; overflow-x: auto; padding: 8px 12px !important; scrollbar-width: none; }
-          .app-nav > div { flex: 0 0 auto; }
-          .app-nav > div > div { display: none !important; }
-          .nav-button { width: auto !important; padding: 9px 12px !important; margin: 0 !important; white-space: nowrap; }
-          .nav-button[aria-current='page']::before { display: none; }
-          .sidebar-help { display: none !important; }
-          .app-content { width: 100% !important; margin-left: 0 !important; }
-          .app-topbar { height: 48px !important; padding: 0 18px !important; }
-          .profile-switcher > span:last-child { display: none; }
-          .page-shell { padding: 24px 18px 36px !important; }
-          .page-heading h1 { font-size: 27px !important; }
-          .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
-          .kpi-card { min-height: 150px; padding: 17px !important; }
-        }
-        @media (max-width: 460px) {
-          .kpi-grid { grid-template-columns: 1fr !important; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
-        }
-      `}</style>
-
-      <div className="app-shell" style={{ display:"flex", minHeight:"100dvh", width:"100%", background:C.bg, overflow:"hidden" }}>
-        <Sidebar active={active} setActive={setActive} />
-
-        <div className="app-content" style={{ display:"flex", flexDirection:"column", minWidth:0, width:"calc(100% - 240px)", marginLeft: 240 }}>
-          <Topbar usuario={usuario} onChangeUser={changeUser} />
-
-          {loading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{ background:C.orange, padding:"6px 28px",
-              fontFamily:"'Inter',sans-serif", fontSize:11, color:"#fff",
-              display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>↻</span>
-              Sincronizando planilha…
-            </motion.div>
-          )}
-
-          <main style={{ flex:1, overflowY:"auto" }}>
-            {syncError && (
-              <div role="alert" style={{ margin: "16px 28px", padding: 16, color: C.text, background: C.bgCard, border: `1px solid ${C.rose}`, borderRadius: 8 }}>
-                <p>Falha na sincronização: {syncError}</p>
-                <button type="button" onClick={fetchLeads} disabled={loading} style={{ marginTop: 10, padding: "8px 12px", cursor: "pointer" }}>
-                  {loading ? "Sincronizando…" : "Tentar novamente"}
-                </button>
-              </div>
-            )}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={active}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-              >
-                {renderPage()}
-              </motion.div>
-            </AnimatePresence>
-          </main>
-
-          <div style={{ padding:"10px 28px", borderTop:`1px solid ${C.border}`,
-            display:"flex", justifyContent:"space-between",
-            fontFamily:"'Inter',sans-serif", fontSize:10, color:C.text3 }}>
-            <span>Jarvis Jr. · Líder Jr.</span>
-            <span>{lastSync ? `Atualizado às ${lastSync.toLocaleTimeString("pt-BR")}` : "—"}</span>
-          </div>
-        </div>
-      </div>
-
-      <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
-    </>
-  );
+  if (!usuario) return <MotionConfig reducedMotion="user"><ProfileGate onSelect={selectUser}/></MotionConfig>;
+  return <MotionConfig reducedMotion="user">
+    <AppShell active={active} onNav={setActive} usuario={usuario} onChangeUser={changeUser} onSearch={query => {setGlobalSearch(query);setActive('base');}} loading={loading} lastSync={lastSync} onRefresh={() => { setLoading(true); fetchLeads(); }}>
+      {syncError && <div className="sync-alert" role="alert"><WarningCircle size={22}/><div><strong>Não foi possível sincronizar os dados</strong><p>{syncError}</p></div><button className="button-secondary" onClick={() => { setLoading(true); fetchLeads(); }} disabled={loading}>{loading ? 'Sincronizando…' : 'Tentar novamente'}</button></div>}
+      <AnimatePresence mode="wait"><motion.div key={active} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.12}}>{renderPage()}</motion.div></AnimatePresence>
+    </AppShell>
+  </MotionConfig>;
 }
