@@ -13,7 +13,7 @@ import { SquaresFour, MagnifyingGlass, Kanban, CalendarBlank, Pulse, Database, C
 import './app-ui.css';
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const WEBHOOK_URL = "https://jarvis-n8n.qssazf.easypanel.host/webhook-test/jarvis_jr";
+const WEBHOOK_URL = "https://jarvis-n8n.qssazf.easypanel.host/webhook/jarvis_jr";
 
 const COMERCIANTES = ["Amanda", "Caique", "Laísa", "Pedro", "Gustavo", "Enzo"];
 
